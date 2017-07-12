@@ -175,7 +175,7 @@ int radeon_uvd_init(struct radeon_device *rdev)
 	if (!fw_name || r) {
 		r = request_firmware(&rdev->uvd_fw, legacy_fw_name, rdev->dev);
 		if (r) {
-			dev_err(rdev->dev, "radeon_uvd: Can't load firmware \"%s\"\n",
+			dev_err(rdev->dev, "radeon_uvd: Can't load legacy firmware \"%s\"\n",
 				legacy_fw_name);
 			return r;
 		}
