@@ -31,28 +31,40 @@
 #include "amdgpu_ih.h"
 #include "amdgpu_uvd.h"
 #include "amdgpu_vce.h"
+#include "sid.h"
 #include "atom.h"
 #include "amd_pcie.h"
+
 #include "si_dpm.h"
-#include "sid.h"
-#include "si_ih.h"
-#include "gfx_v6_0.h"
-#include "gmc_v6_0.h"
-#include "si_dma.h"
-#include "dce_v6_0.h"
+
 #include "si.h"
+#include "gmc_v6_0.h"
+#include "si_ih.h"
+#include "dce_v6_0.h"
+#include "gfx_v6_0.h"
+#include "si_dma.h"
 #include "uvd_v3_1.h"
-#include "dce_virtual.h"
-#include "gca/gfx_6_0_d.h"
-#include "oss/oss_1_0_d.h"
-#include "oss/oss_1_0_sh_mask.h"
-#include "gmc/gmc_6_0_d.h"
-#include "dce/dce_6_0_d.h"
+#include "vce_v1_0.h"
+
 #include "uvd/uvd_4_0_d.h"
+
+#include "smu/smu_7_0_1_d.h"
+#include "smu/smu_7_0_1_sh_mask.h"
+
+#include "dce/dce_6_0_d.h"
+
 #include "bif/bif_3_0_d.h"
 #include "bif/bif_3_0_sh_mask.h"
 
+#include "gca/gfx_6_0_d.h"
+
+#include "gmc/gmc_6_0_d.h"
+
+#include "oss/oss_1_0_d.h"
+#include "oss/oss_1_0_sh_mask.h"
+
 #include "amdgpu_dm.h"
+#include "dce_virtual.h"
 
 static const u32 tahiti_golden_registers[] =
 {

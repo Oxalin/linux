@@ -30,6 +30,9 @@
 #include "oss/oss_1_0_d.h"
 #include "oss/oss_1_0_sh_mask.h"
 
+#include "oss/oss_1_0_d.h"
+#include "oss/oss_1_0_sh_mask.h"
+
 static void si_ih_set_interrupt_funcs(struct amdgpu_device *adev);
 
 static void si_ih_enable_interrupts(struct amdgpu_device *adev)
@@ -43,7 +46,7 @@ static void si_ih_enable_interrupts(struct amdgpu_device *adev)
 	WREG32(IH_RB_CNTL, ih_rb_cntl);
 	adev->irq.ih.enabled = true;
 }
-  
+
 static void si_ih_disable_interrupts(struct amdgpu_device *adev)
 {
 	u32 ih_rb_cntl = RREG32(IH_RB_CNTL);
@@ -214,7 +217,7 @@ static int si_ih_resume(void *handle)
 static bool si_ih_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
-	u32 tmp = RREG32(SRBM_STATUS);
+	u32 tmp = RREG32(mmSRBM_STATUS);
 
 	if (tmp & SRBM_STATUS__IH_BUSY_MASK)
 		return false;
@@ -240,23 +243,23 @@ static int si_ih_soft_reset(void *handle)
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
 	u32 srbm_soft_reset = 0;
-	u32 tmp = RREG32(SRBM_STATUS);
+	u32 tmp = RREG32(mmSRBM_STATUS);
 
 	if (tmp & SRBM_STATUS__IH_BUSY_MASK)
 		srbm_soft_reset |= SRBM_SOFT_RESET__SOFT_RESET_IH_MASK;
 
 	if (srbm_soft_reset) {
-		tmp = RREG32(SRBM_SOFT_RESET);
+		tmp = RREG32(mmSRBM_SOFT_RESET);
 		tmp |= srbm_soft_reset;
-		dev_info(adev->dev, "SRBM_SOFT_RESET=0x%08X\n", tmp);
-		WREG32(SRBM_SOFT_RESET, tmp);
-		tmp = RREG32(SRBM_SOFT_RESET);
+		dev_info(adev->dev, "mmSRBM_SOFT_RESET=0x%08X\n", tmp);
+		WREG32(mmSRBM_SOFT_RESET, tmp);
+		tmp = RREG32(mmSRBM_SOFT_RESET);
 
 		udelay(50);
 
 		tmp &= ~srbm_soft_reset;
-		WREG32(SRBM_SOFT_RESET, tmp);
-		tmp = RREG32(SRBM_SOFT_RESET);
+		WREG32(mmSRBM_SOFT_RESET, tmp);
+		tmp = RREG32(mmSRBM_SOFT_RESET);
 
 		udelay(50);
 	}

@@ -23,6 +23,17 @@
 #ifndef VCE_1_0_SH_MASK_H
 #define VCE_1_0_SH_MASK_H
 
+/* Imported from sid.h or cleaned up */
+#define VCE_CLK_EN				(1 << 0)
+#define VCE_ECPU_SOFT_RESET			(1 << 0)
+#define VCE_FME_SOFT_RESET			(1 << 2)
+#define CGC_DYN_CLOCK_MODE			(1 << 16)
+#define VCE_FW_REG_STATUS_BUSY			(1 << 0)
+#define VCE_FW_REG_STATUS_PASS			(1 << 3)
+#define VCE_FW_REG_STATUS_DONE			(1 << 11)
+
+
+
 #define VCE_LMI_CACHE_CTRL__VCPU_EN_MASK 0x00000001L
 #define VCE_LMI_CACHE_CTRL__VCPU_EN__SHIFT 0x00000000
 #define VCE_LMI_CTRL2__STALL_ARB_UMC_MASK 0x00000100L
@@ -96,4 +107,4 @@
 #define VCE_VCPU_CNTL__RBBM_SOFT_RESET_MASK 0x00040000L
 #define VCE_VCPU_CNTL__RBBM_SOFT_RESET__SHIFT 0x00000012
 
-#endif
+#endif /* VCE_1_0_SH_MASK_H */
