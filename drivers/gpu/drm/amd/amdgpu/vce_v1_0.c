@@ -27,9 +27,19 @@
 
 #include <linux/firmware.h>
 #include <drm/drmP.h>
-#include "radeon.h"
-#include "radeon_asic.h"
+#include "amdgpu.h"
+#include "amdgpu_vce.h"
 #include "sid.h"
+
+#include "vce/vce_1_0_d.h"
+#include "vce/vce_1_0_sh_mask.h"
+
+#include "smu/smu_7_0_1_d.h"
+#include "smu/smu_7_0_1_sh_mask.h"
+
+#include "oss/oss_1_0_d.h"
+#include "oss/oss_1_0_sh_mask.h"
+
 
 #define VCE_V1_0_FW_SIZE	(256 * 1024)
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
@@ -49,54 +59,54 @@ struct vce_v1_0_fw_signature
 };
 
 /**
- * vce_v1_0_get_rptr - get read pointer
+ * vce_v1_0_ring_get_rptr - get read pointer
  *
- * @rdev: radeon_device pointer
- * @ring: radeon_ring pointer
+ * @ring: amdgpu_ring pointer
  *
  * Returns the current hardware read pointer
  */
-uint32_t vce_v1_0_get_rptr(struct radeon_device *rdev,
-			   struct radeon_ring *ring)
+static uint64_t vce_v1_0_ring_get_rptr(struct amdgpu_ring *ring)
 {
-	if (ring->idx == TN_RING_TYPE_VCE1_INDEX)
-		return RREG32(VCE_RB_RPTR);
+	struct amdgpu_device *adev = ring->adev;
+
+	if (ring == &adev->vce.ring[0])
+		return RREG32(mmVCE_RB_RPTR);
 	else
-		return RREG32(VCE_RB_RPTR2);
+		return RREG32(mmVCE_RB_RPTR2);
 }
 
 /**
- * vce_v1_0_get_wptr - get write pointer
+ * vce_v1_0_ring_get_wptr - get write pointer
  *
- * @rdev: radeon_device pointer
- * @ring: radeon_ring pointer
+ * @ring: amdgpu_ring pointer
  *
  * Returns the current hardware write pointer
  */
-uint32_t vce_v1_0_get_wptr(struct radeon_device *rdev,
-			   struct radeon_ring *ring)
+static uint64_t vce_v1_0_ring_get_wptr(struct amdgpu_ring *ring)
 {
-	if (ring->idx == TN_RING_TYPE_VCE1_INDEX)
-		return RREG32(VCE_RB_WPTR);
+	struct amdgpu_device *adev = ring->adev;
+
+	if (ring == &adev->vce.ring[0])
+		return RREG32(mmVCE_RB_WPTR);
 	else
-		return RREG32(VCE_RB_WPTR2);
+		return RREG32(mmVCE_RB_WPTR2);
 }
 
 /**
- * vce_v1_0_set_wptr - set write pointer
+ * vce_v1_0_ring_set_wptr - set write pointer
  *
- * @rdev: radeon_device pointer
- * @ring: radeon_ring pointer
+ * @ring: amdgpu_ring pointer
  *
  * Commits the write pointer to the hardware
  */
-void vce_v1_0_set_wptr(struct radeon_device *rdev,
-		       struct radeon_ring *ring)
+static void vce_v1_0_ring_set_wptr(struct amdgpu_ring *ring)
 {
-	if (ring->idx == TN_RING_TYPE_VCE1_INDEX)
-		WREG32(VCE_RB_WPTR, ring->wptr);
+	struct amdgpu_device *adev = ring->adev;
+
+	if (ring == &adev->vce.ring[0])
+		WREG32(mmVCE_RB_WPTR, lower_32_bits(ring->wptr));
 	else
-		WREG32(VCE_RB_WPTR2, ring->wptr);
+		WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
 }
 
 void vce_v1_0_enable_mgcg(struct radeon_device *rdev, bool enable)
