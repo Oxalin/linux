@@ -59,6 +59,7 @@ struct vce_v1_0_fw_signature
 };
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
 static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
+static int vce_v1_0_wait_for_idle(void *handle);
 
 /**
  * vce_v1_0_ring_get_rptr - get read pointer
@@ -395,6 +396,26 @@ int vce_v1_0_init(struct radeon_device *rdev)
 	return 0;
 }
 
+/* !!! Same structure as under si_ih.c and variables defines as for VCE 2 and 3 */
+static bool vce_v1_0_is_idle(void *handle)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	return !(RREG32(mmSRBM_STATUS2) & SRBM_STATUS2__VCE_BUSY_MASK);
+}
+
+static int vce_v1_0_wait_for_idle(void *handle)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+	unsigned i;
+
+	for (i = 0; i < adev->usec_timeout; i++) {
+		if (vce_v1_0_is_idle(handle))
+			return 0;
+	}
+	return -ETIMEDOUT;
+}
+
 static int vce_v1_0_early_init(void *handle)
  {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
@@ -515,8 +536,8 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.hw_fini = NULL,
 	.suspend = NULL,
 	.resume = NULL,
-	.is_idle = NULL,
-	.wait_for_idle = NULL,
+	.is_idle = vce_v1_0_is_idle,
+	.wait_for_idle = vce_v1_0_wait_for_idle,
 	.soft_reset = NULL,
 	.set_clockgating_state = NULL,
 	.set_powergating_state = NULL,
