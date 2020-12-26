@@ -60,6 +60,10 @@ struct vce_v1_0_fw_signature
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
 static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
 static int vce_v1_0_wait_for_idle(void *handle);
+static int vce_v1_0_set_clockgating_state(void *handle,
+					  enum amd_clockgating_state state);
+
+static void vce_v1_0_disable_cg(struct amdgpu_device *adev);
 
 /**
  * vce_v1_0_ring_get_rptr - get read pointer
@@ -112,59 +116,132 @@ static void vce_v1_0_ring_set_wptr(struct amdgpu_ring *ring)
 		WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
 }
 
-void vce_v1_0_enable_mgcg(struct radeon_device *rdev, bool enable)
+
+/* TODO !!! Validate taken from VCE2.0 */
+static void vce_v1_0_disable_cg(struct amdgpu_device *adev)
+{
+	WREG32(mmVCE_CGTT_CLK_OVERRIDE, 7);
+}
+
+/* Based on VCE2, but with VCE1's mgcg code */
+static void vce_v1_0_set_sw_cg(struct amdgpu_device *adev, bool gated)
 {
 	u32 tmp;
 
-	if (enable && (rdev->cg_flags & RADEON_CG_SUPPORT_VCE_MGCG)) {
-		tmp = RREG32(VCE_CLOCK_GATING_A);
+	if (gated) {
+		tmp = RREG32(mmVCE_CLOCK_GATING_A);
 		tmp |= CGC_DYN_CLOCK_MODE;
-		WREG32(VCE_CLOCK_GATING_A, tmp);
+		WREG32(mmVCE_CLOCK_GATING_A, tmp);
 
-		tmp = RREG32(VCE_UENC_CLOCK_GATING);
+		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
 		tmp &= ~0x1ff000;
 		tmp |= 0xff800000;
-		WREG32(VCE_UENC_CLOCK_GATING, tmp);
+		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
 
-		tmp = RREG32(VCE_UENC_REG_CLOCK_GATING);
+		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
 		tmp &= ~0x3ff;
-		WREG32(VCE_UENC_REG_CLOCK_GATING, tmp);
-	} else {
-		tmp = RREG32(VCE_CLOCK_GATING_A);
-		tmp &= ~CGC_DYN_CLOCK_MODE;
-		WREG32(VCE_CLOCK_GATING_A, tmp);
+		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 
-		tmp = RREG32(VCE_UENC_CLOCK_GATING);
+		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
+	} else {
+		tmp = RREG32(mmVCE_CLOCK_GATING_A);
+		tmp &= ~CGC_DYN_CLOCK_MODE;
+		WREG32(mmVCE_CLOCK_GATING_A, tmp);
+
+		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
 		tmp |= 0x1ff000;
 		tmp &= ~0xff800000;
-		WREG32(VCE_UENC_CLOCK_GATING, tmp);
+		/* both bitwise operation are the same as tmp &= ~0xff9ff000*/
+		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
 
-		tmp = RREG32(VCE_UENC_REG_CLOCK_GATING);
+		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
 		tmp |= 0x3ff;
-		WREG32(VCE_UENC_REG_CLOCK_GATING, tmp);
+		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 	}
 }
 
-static void vce_v1_0_init_cg(struct radeon_device *rdev)
+static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
+{
+	u32 orig, tmp;
+
+	/* Not tested, validated, implemented */
+	// Portage debug
+	DRM_INFO("%s not tested and validated.\n", __FUNCTION__);
+
+/* LMI_MC/LMI_UMC always set in dynamic,
+ * set {CGC_*_GATE_MODE, CGC_*_SW_GATE} = {0, 0}
+ */
+	tmp = RREG32(mmVCE_CLOCK_GATING_B);
+	tmp &= ~0x00060006; /* !!! Magic value */
+
+/* Exception for ECPU, IH, SEM, SYS blocks needs to be turned on/off by SW */
+	if (gated) {
+		tmp |= 0xe100e1;  /* changed from 0xe10000 */
+		WREG32(mmVCE_CLOCK_GATING_B, tmp);
+	} else {
+		tmp |= 0xe1;
+		tmp &= ~0xe100e1;  /* changed from 0xe10000 */
+		WREG32(mmVCE_CLOCK_GATING_B, tmp);
+	}
+
+	orig = tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
+	tmp &= ~0x1ff000;
+	tmp &= ~0xff800000;
+	/* both bitwise operation are the same as tmp &= ~0xff9ff000*/
+	if (tmp != orig)
+		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
+
+	orig = tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
+	tmp &= ~0x3ff;
+	if (tmp != orig)
+		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
+
+	/* set VCE_UENC_REG_CLOCK_GATING always in dynamic mode */
+	WREG32(mmVCE_UENC_REG_CLOCK_GATING, 0x00);
+
+	if(gated)
+		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
+}
+
+static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
+								bool sw_cg)
+{
+	if (enable && (adev->cg_flags & AMD_CG_SUPPORT_VCE_MGCG)) {
+		if (sw_cg)
+			vce_v1_0_set_sw_cg(adev, true);
+		else
+			vce_v1_0_set_dyn_cg(adev, true);
+	} else {
+		vce_v1_0_disable_cg(adev);
+
+		if (sw_cg)
+			vce_v1_0_set_sw_cg(adev, false);
+		else
+			vce_v1_0_set_dyn_cg(adev, false);
+	}
+}
+
+/* Keeping original code from radeon for now... */
+static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 {
 	u32 tmp;
 
-	tmp = RREG32(VCE_CLOCK_GATING_A);
+	tmp = RREG32(mmVCE_CLOCK_GATING_A);
 	tmp |= CGC_DYN_CLOCK_MODE;
-	WREG32(VCE_CLOCK_GATING_A, tmp);
+	WREG32(mmVCE_CLOCK_GATING_A, tmp);
 
-	tmp = RREG32(VCE_CLOCK_GATING_B);
+	tmp = RREG32(mmVCE_CLOCK_GATING_B);
 	tmp |= 0x1e;
 	tmp &= ~0xe100e1;
-	WREG32(VCE_CLOCK_GATING_B, tmp);
+	WREG32(mmVCE_CLOCK_GATING_B, tmp);
 
-	tmp = RREG32(VCE_UENC_CLOCK_GATING);
+	tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
 	tmp &= ~0xff9ff000;
-	WREG32(VCE_UENC_CLOCK_GATING, tmp);
+	WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
 
-	tmp = RREG32(VCE_UENC_REG_CLOCK_GATING);
+	tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
 	tmp &= ~0x3ff;
-	WREG32(VCE_UENC_REG_CLOCK_GATING, tmp);
+	WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 }
 
 int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
@@ -526,6 +603,25 @@ static int vce_v1_0_process_interrupt(struct amdgpu_device *adev,
 	return 0;
 }
 
+/* !!! Code taken from VCE 2 */
+static int vce_v1_0_set_clockgating_state(void *handle,
+					  enum amd_clockgating_state state)
+{
+	bool gate = false;
+	bool sw_cg = false;
+
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	if (state == AMD_CG_STATE_GATE) {
+		gate = true;
+		sw_cg = true;
+	}
+
+	vce_v1_0_enable_mgcg(adev, gate, sw_cg);
+
+	return 0;
+}
+
 static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.name = "vce_v1_0",
 	.early_init = vce_v1_0_early_init,
@@ -539,7 +635,7 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.is_idle = vce_v1_0_is_idle,
 	.wait_for_idle = vce_v1_0_wait_for_idle,
 	.soft_reset = NULL,
-	.set_clockgating_state = NULL,
+	.set_clockgating_state = vce_v1_0_set_clockgating_state,
 	.set_powergating_state = NULL,
 
 	// .early_init = vce_v1_0_early_init,
