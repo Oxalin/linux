@@ -445,6 +445,31 @@ static int vce_v1_0_sw_init(void *handle)
 	return r;
 }
 
+// !!! Something is failing here for now
+static int vce_v1_0_sw_fini(void *handle)
+{
+	int r;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	r = amdgpu_vce_suspend(adev);
+	if (r) {
+		DRM_INFO("%s failed.\n", "amdgpu_vce_suspend(adev)");
+		return r;
+	}
+
+	r = amdgpu_vce_sw_fini(adev);
+
+	// Portage debug
+	if (r) {
+		DRM_INFO("%s failed.\n", "amdgpu_vce_sw_fini(adev)");
+	}
+	else {
+		DRM_INFO("%s succeeded.\n", __FUNCTION__);
+	}
+
+	return r;
+}
+
 /* Ported from VCE2.0 and later */
 static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
 					struct amdgpu_irq_src *source,
@@ -485,7 +510,7 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.early_init = vce_v1_0_early_init,
 	.late_init = NULL,
 	.sw_init = vce_v1_0_sw_init,
-	.sw_fini = NULL,
+	.sw_fini = vce_v1_0_sw_fini,
 	.hw_init = NULL,
 	.hw_fini = NULL,
 	.suspend = NULL,
