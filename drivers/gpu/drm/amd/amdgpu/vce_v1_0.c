@@ -612,6 +612,31 @@ static int vce_v1_0_hw_fini(void *handle)
 	return vce_v1_0_set_clockgating_state(adev, AMD_CG_STATE_GATE); */
 }
 
+static int vce_v1_0_suspend(void *handle)
+{
+	int r;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	r = vce_v1_0_hw_fini(adev);
+	if (r)
+		return r;
+
+	return amdgpu_vce_suspend(adev);
+}
+
+/* Imported from VCE2 since it was also modified from radeon to amdgpu under VCE2 */
+static int vce_v1_0_resume(void *handle)
+{
+	int r;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	r = amdgpu_vce_resume(adev);
+	if (r)
+		return r;
+
+	return vce_v1_0_hw_init(adev);
+}
+
 }
 
 /* Ported from VCE2.0 and later */
@@ -676,8 +701,8 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.sw_fini = vce_v1_0_sw_fini,
 	.hw_init = vce_v1_0_hw_init,
 	.hw_fini = vce_v1_0_hw_fini,
-	.suspend = NULL,
-	.resume = NULL,
+	.suspend = vce_v1_0_suspend,
+	.resume = vce_v1_0_resume,
 	.is_idle = vce_v1_0_is_idle,
 	.wait_for_idle = vce_v1_0_wait_for_idle,
 	.soft_reset = NULL,
@@ -748,3 +773,16 @@ const struct amdgpu_ip_block_version vce_v1_0_ip_block =
 		.rev = 0,
 		.funcs = &vce_v1_0_ip_funcs,
 };
+
+/* Imported from VCE2 since it was also modified from radeon to amdgpu under VCE2 */
+static int vce_v1_0_resume(void *handle)
+{
+	int r;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	r = amdgpu_vce_resume(adev);
+	if (r)
+		return r;
+
+	return vce_v1_0_hw_init(adev);
+}
