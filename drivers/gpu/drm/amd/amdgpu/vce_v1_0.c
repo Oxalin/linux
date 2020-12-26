@@ -57,6 +57,8 @@ struct vce_v1_0_fw_signature
 		uint32_t sigval[4];
 	} val[8];
 };
+static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
+static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
 
 /**
  * vce_v1_0_ring_get_rptr - get read pointer
@@ -393,9 +395,56 @@ int vce_v1_0_init(struct radeon_device *rdev)
 	return 0;
 }
 
+static int vce_v1_0_early_init(void *handle)
+ {
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	adev->vce.num_rings = 2;
+
+	vce_v1_0_set_ring_funcs(adev);
+	vce_v1_0_set_irq_funcs(adev);
+
+	return 0;
+}
+
+/* Ported from VCE2.0 and later */
+static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
+					struct amdgpu_irq_src *source,
+					unsigned type,
+					enum amdgpu_interrupt_state state)
+{
+	uint32_t val = 0;
+
+	if (state == AMDGPU_IRQ_STATE_ENABLE)
+		val |= VCE_SYS_INT_EN__VCE_SYS_INT_TRAP_INTERRUPT_EN_MASK;
+
+	WREG32_P(mmVCE_SYS_INT_EN, val, ~VCE_SYS_INT_EN__VCE_SYS_INT_TRAP_INTERRUPT_EN_MASK);
+	return 0;
+}
+
+/* Ported from VCE2.0 from both amdgpu and radeon (cik.c) driver. This was not done under radeon (si.c). */
+static int vce_v1_0_process_interrupt(struct amdgpu_device *adev,
+				      struct amdgpu_irq_src *source,
+				      struct amdgpu_iv_entry *entry)
+{
+	DRM_DEBUG("IH: VCE\n");
+	switch (entry->src_data[0]) {
+	case 0:
+	case 1:
+		amdgpu_fence_process(&adev->vce.ring[entry->src_data[0]]);
+		break;
+	default:
+		DRM_ERROR("Unhandled interrupt: %d %d\n",
+			  entry->src_id, entry->src_data[0]);
+		break;
+	}
+
+	return 0;
+}
+
 static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.name = "vce_v1_0",
-	.early_init = NULL,
+	.early_init = vce_v1_0_early_init,
 	.late_init = NULL,
 	.sw_init = NULL,
 	.sw_fini = NULL,
@@ -424,6 +473,28 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	// .set_powergating_state = vce_v1_0_set_powergating_state,
 };
 
+/* !!! Values validated */
+static const struct amdgpu_ring_funcs vce_v1_0_ring_funcs = {
+	.type = AMDGPU_RING_TYPE_VCE,
+	.align_mask = 0xf,
+	.nop = VCE_CMD_NO_OP,
+	.support_64bit_ptrs = false,
+	.get_rptr = vce_v1_0_ring_get_rptr,
+	.get_wptr = vce_v1_0_ring_get_wptr,
+	.set_wptr = vce_v1_0_ring_set_wptr,
+	.parse_cs = amdgpu_vce_ring_parse_cs,
+	.emit_frame_size = 6, /* amdgpu_vce_ring_emit_fence  x1 no user fence */
+	.emit_ib_size = 4, /* amdgpu_vce_ring_emit_ib */
+	.emit_ib = amdgpu_vce_ring_emit_ib,
+	.emit_fence = amdgpu_vce_ring_emit_fence,
+	.test_ring = amdgpu_vce_ring_test_ring,
+	.test_ib = amdgpu_vce_ring_test_ib,
+	.insert_nop = amdgpu_ring_insert_nop,
+	.pad_ib = amdgpu_ring_generic_pad_ib,
+	.begin_use = amdgpu_vce_ring_begin_use,
+	.end_use = amdgpu_vce_ring_end_use,
+};
+
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev)
 {
 	int i;
@@ -431,6 +502,17 @@ static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev)
 	for (i = 0; i < adev->vce.num_rings; i++)
 		adev->vce.ring[i].funcs = &vce_v1_0_ring_funcs;
 }
+
+static const struct amdgpu_irq_src_funcs vce_v1_0_irq_funcs = {
+	.set = vce_v1_0_set_interrupt_state,
+	.process = vce_v1_0_process_interrupt,
+};
+
+static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev)
+{
+	adev->vce.irq.num_types = 1;
+	adev->vce.irq.funcs = &vce_v1_0_irq_funcs;
+};
 
 const struct amdgpu_ip_block_version vce_v1_0_ip_block =
 {
