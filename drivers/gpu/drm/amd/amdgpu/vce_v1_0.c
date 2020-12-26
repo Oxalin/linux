@@ -63,6 +63,7 @@ static int vce_v1_0_wait_for_idle(void *handle);
 static int vce_v1_0_set_clockgating_state(void *handle,
 					  enum amd_clockgating_state state);
 
+static int vce_v1_0_hw_init(void *handle);
 static void vce_v1_0_disable_cg(struct amdgpu_device *adev);
 
 /**
@@ -568,6 +569,51 @@ static int vce_v1_0_sw_fini(void *handle)
 	return r;
 }
 
+/* !!! Ported from other VCE versions. */
+static int vce_v1_0_hw_init(void *handle)
+{
+	int r, i;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	amdgpu_asic_set_vce_clocks(adev, 10000, 10000);
+	vce_v1_0_enable_mgcg(adev, true, false);
+
+	// Portage debug
+	DRM_INFO("%s - enable_mgcg succeeded.\n", __FUNCTION__);
+
+	for (i = 0; i < adev->vce.num_rings; i++)
+		adev->vce.ring[i].ready = false;
+
+	for (i = 0; i < adev->vce.num_rings; i++) {
+		r = amdgpu_ring_test_ring(&adev->vce.ring[i]);
+		if (r)
+			return r;
+		else
+			adev->vce.ring[i].ready = true;
+	}
+
+	DRM_INFO("VCE initialized successfully.\n");
+
+	return 0;
+}
+
+static int vce_v1_0_hw_fini(void *handle)
+{
+	return 0;
+/* Taken from VCE 3 */
+/* 	int r;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	r = vce_v1_0_wait_for_idle(handle);
+	if (r)
+		return r;
+
+	vce_v1_0_stop(adev);
+	return vce_v1_0_set_clockgating_state(adev, AMD_CG_STATE_GATE); */
+}
+
+}
+
 /* Ported from VCE2.0 and later */
 static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
 					struct amdgpu_irq_src *source,
@@ -628,8 +674,8 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.late_init = NULL,
 	.sw_init = vce_v1_0_sw_init,
 	.sw_fini = vce_v1_0_sw_fini,
-	.hw_init = NULL,
-	.hw_fini = NULL,
+	.hw_init = vce_v1_0_hw_init,
+	.hw_fini = vce_v1_0_hw_fini,
 	.suspend = NULL,
 	.resume = NULL,
 	.is_idle = vce_v1_0_is_idle,
