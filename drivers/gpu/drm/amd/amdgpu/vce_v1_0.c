@@ -43,7 +43,7 @@
 
 #define VCE_V1_0_FW_SIZE	(256 * 1024)
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
-#define VCE_V1_0_DATA_SIZE	(7808 * (RADEON_MAX_VCE_HANDLES + 1))
+#define VCE_V1_0_DATA_SIZE	(7808 * (AMDGPU_MAX_VCE_HANDLES + 1))
 
 struct vce_v1_0_fw_signature
 {
@@ -407,6 +407,44 @@ static int vce_v1_0_early_init(void *handle)
 	return 0;
 }
 
+/* It seems to be right compared to other VCE versions */
+static int vce_v1_0_sw_init(void *handle)
+{
+	struct amdgpu_ring *ring;
+	int r, i;
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	/* VCE */
+	/* This IRQ value wasn't used under radeon for SI. It was introduced under CIK (cik.c). 
+		 However, it seems logical to add it also for SI. */
+	r = amdgpu_irq_add_id(adev, AMDGPU_IH_CLIENTID_LEGACY, 167, &adev->vce.irq);
+	if (r)
+		return r;
+
+	r = amdgpu_vce_sw_init(adev, VCE_V1_0_FW_SIZE +
+		VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE);
+	if (r)
+		return r;
+
+	r = amdgpu_vce_resume(adev);
+	if (r)
+		return r;
+
+	for (i = 0; i < adev->vce.num_rings; i++) {
+		ring = &adev->vce.ring[i];
+		sprintf(ring->name, "vce%d", i);
+		r = amdgpu_ring_init(adev, ring, 512,
+				     &adev->vce.irq, 0);
+		if (r)
+			return r;
+	}
+
+	// Portage debug
+	DRM_INFO("%s succeeded.\n", __FUNCTION__);
+
+	return r;
+}
+
 /* Ported from VCE2.0 and later */
 static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
 					struct amdgpu_irq_src *source,
@@ -446,7 +484,7 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.name = "vce_v1_0",
 	.early_init = vce_v1_0_early_init,
 	.late_init = NULL,
-	.sw_init = NULL,
+	.sw_init = vce_v1_0_sw_init,
 	.sw_fini = NULL,
 	.hw_init = NULL,
 	.hw_fini = NULL,
