@@ -354,7 +354,6 @@
 #define		SOFT_RESET_REGBB			(1 << 22)
 #define		SOFT_RESET_ORB				(1 << 23)
 
-#define	CC_SYS_RB_BACKEND_DISABLE			0x3A0
 #define	GC_USER_SYS_RB_BACKEND_DISABLE			0x3A1
 
 #define SRBM_READ_ERROR					0x3A6
@@ -492,7 +491,7 @@
 #define MC_CITF_MISC_WR_CG           			0x993
 #define MC_CITF_MISC_VM_CG           			0x994
 
-#define	MC_ARB_RAMCFG					0x9D8
+//	MC_ARB_RAMCFG
 #define		NOOFBANK_SHIFT					0
 #define		NOOFBANK_MASK					0x00000003
 #define		NOOFRANK_SHIFT					2
@@ -929,12 +928,12 @@
 #define	GRBM_CNTL					0x2000
 #define		GRBM_READ_TIMEOUT(x)				((x) << 0)
 
-#define	GRBM_STATUS2					0x2002
+//	GRBM_STATUS2
 #define		RLC_RQ_PENDING 					(1 << 0)
 #define		RLC_BUSY 					(1 << 8)
 #define		TC_BUSY 					(1 << 9)
 
-#define	GRBM_STATUS					0x2004
+//	GRBM_STATUS	
 #define		CMDFIFO_AVAIL_MASK				0x0000000F
 #define		RING2_RQ_PENDING				(1 << 4)
 #define		SRBM_RQ_PENDING					(1 << 5)
@@ -960,8 +959,8 @@
 #define		CP_BUSY 					(1 << 29)
 #define		CB_BUSY 					(1 << 30)
 #define		GUI_ACTIVE					(1 << 31)
-#define	GRBM_STATUS_SE0					0x2005
-#define	GRBM_STATUS_SE1					0x2006
+//	GRBM_STATUS_SE0
+//	GRBM_STATUS_SE1
 #define		SE_DB_CLEAN					(1 << 1)
 #define		SE_CB_CLEAN					(1 << 2)
 #define		SE_BCI_BUSY					(1 << 22)
@@ -1141,9 +1140,7 @@
 
 #define	TA_CNTL_AUX					0x2542
 
-#define CC_RB_BACKEND_DISABLE				0x263D
-#define		BACKEND_DISABLE(x)     			((x) << 16)
-#define GB_ADDR_CONFIG  				0x263E
+// GB_ADDR_CONFIG
 #define		NUM_PIPES(x)				((x) << 0)
 #define		NUM_PIPES_MASK				0x00000007
 #define		NUM_PIPES_SHIFT				0
@@ -1166,7 +1163,7 @@
 #define		ROW_SIZE_MASK				0x30000000
 #define		ROW_SIZE_SHIFT				28
 
-#define	GB_TILE_MODE0					0x2644
+//	GB_TILE_MODE0
 #       define MICRO_TILE_MODE(x)				((x) << 0)
 #              define	ADDR_SURF_DISPLAY_MICRO_TILING		0
 #              define	ADDR_SURF_THIN_MICRO_TILING		1
@@ -1217,37 +1214,6 @@
 #              define	ADDR_SURF_4_BANK			1
 #              define	ADDR_SURF_8_BANK			2
 #              define	ADDR_SURF_16_BANK			3
-#define	GB_TILE_MODE1					0x2645
-#define	GB_TILE_MODE2					0x2646
-#define	GB_TILE_MODE3					0x2647
-#define	GB_TILE_MODE4					0x2648
-#define	GB_TILE_MODE5					0x2649
-#define	GB_TILE_MODE6					0x264a
-#define	GB_TILE_MODE7					0x264b
-#define	GB_TILE_MODE8					0x264c
-#define	GB_TILE_MODE9					0x264d
-#define	GB_TILE_MODE10					0x264e
-#define	GB_TILE_MODE11					0x264f
-#define	GB_TILE_MODE12					0x2650
-#define	GB_TILE_MODE13					0x2651
-#define	GB_TILE_MODE14					0x2652
-#define	GB_TILE_MODE15					0x2653
-#define	GB_TILE_MODE16					0x2654
-#define	GB_TILE_MODE17					0x2655
-#define	GB_TILE_MODE18					0x2656
-#define	GB_TILE_MODE19					0x2657
-#define	GB_TILE_MODE20					0x2658
-#define	GB_TILE_MODE21					0x2659
-#define	GB_TILE_MODE22					0x265a
-#define	GB_TILE_MODE23					0x265b
-#define	GB_TILE_MODE24					0x265c
-#define	GB_TILE_MODE25					0x265d
-#define	GB_TILE_MODE26					0x265e
-#define	GB_TILE_MODE27					0x265f
-#define	GB_TILE_MODE28					0x2660
-#define	GB_TILE_MODE29					0x2661
-#define	GB_TILE_MODE30					0x2662
-#define	GB_TILE_MODE31					0x2663
 
 #define	CB_PERFCOUNTER0_SELECT0				0x2688
 #define	CB_PERFCOUNTER0_SELECT1				0x2689
@@ -1260,7 +1226,7 @@
 
 #define	CB_CGTT_SCLK_CTRL				0x2698
 
-#define	GC_USER_RB_BACKEND_DISABLE			0x26DF
+//	GC_USER_RB_BACKEND_DISABLE
 #define		BACKEND_DISABLE_MASK			0x00FF0000
 #define		BACKEND_DISABLE_SHIFT			16
 
@@ -1393,7 +1359,7 @@
 
 #define DB_DEPTH_INFO                                   0xA00F
 
-#define PA_SC_RASTER_CONFIG                             0xA0D4
+// PA_SC_RASTER_CONFIG
 #	define RB_MAP_PKR0(x)				((x) << 0)
 #	define RB_MAP_PKR0_MASK				(0x3 << 0)
 #	define RB_MAP_PKR1(x)				((x) << 2)
@@ -1898,7 +1864,7 @@
 #       define DATA_SWAP_ENABLE                           (1 << 3)
 #       define FENCE_SWAP_ENABLE                          (1 << 4)
 #       define CTXEMPTY_INT_ENABLE                        (1 << 28)
-#define DMA_STATUS_REG                                    0x340d
+// DMA_STATUS_REG
 #       define DMA_IDLE                                   (1 << 0)
 #define DMA_TILING_CONFIG  				  0x342e
 
@@ -2384,7 +2350,6 @@
 #define PACKET3_SEM_SEL_WAIT	    (0x7 << 29)
 
 #define CONFIG_CNTL	0x1509
-#define CC_DRM_ID_STRAPS	0X1559
 #define AMDGPU_PCIE_INDEX	0xc
 #define AMDGPU_PCIE_DATA	0xd
 

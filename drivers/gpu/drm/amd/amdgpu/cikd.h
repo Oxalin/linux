@@ -59,9 +59,6 @@
 #define		VMID(x)						((x) << 4)
 #define		QUEUEID(x)					((x) << 8)
 
-#define mmCC_DRM_ID_STRAPS				0x1559
-#define CC_DRM_ID_STRAPS__ATI_REV_ID_MASK		0xf0000000
-
 #define mmCHUB_CONTROL					0x619
 #define		BYPASS_VM					(1 << 0)
 

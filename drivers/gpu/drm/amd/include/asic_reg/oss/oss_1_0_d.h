@@ -129,6 +129,8 @@
 #define mmCP_CONFIG 0x0F92
 #define mmDC_TEST_DEBUG_DATA 0x157D
 #define mmDC_TEST_DEBUG_INDEX 0x157C
+#define mmDMA_STATUS_REG                                                      0x340d
+#define mmDMA_TILING_CONFIG 0x342E
 #define mmGC_USER_SYS_RB_BACKEND_DISABLE 0x03A1
 #define mmHDP_ADDR_CONFIG 0x0BD2
 #define mmHDP_DEBUG0 0x0BCC
@@ -268,8 +270,5 @@
 #define mmUVD_CONFIG 0x0F98
 #define mmVCE_CONFIG 0x0F94
 #define mmXDMA_MSTR_MEM_OVERFLOW_CNTL 0x03F8
-
-/* from the old sid.h */
-#define mmDMA_TILING_CONFIG 0x342E
 
 #endif
