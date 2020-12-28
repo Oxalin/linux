@@ -392,3 +392,51 @@ int vce_v1_0_init(struct radeon_device *rdev)
 
 	return 0;
 }
+
+static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
+	.name = "vce_v1_0",
+	.early_init = NULL,
+	.late_init = NULL,
+	.sw_init = NULL,
+	.sw_fini = NULL,
+	.hw_init = NULL,
+	.hw_fini = NULL,
+	.suspend = NULL,
+	.resume = NULL,
+	.is_idle = NULL,
+	.wait_for_idle = NULL,
+	.soft_reset = NULL,
+	.set_clockgating_state = NULL,
+	.set_powergating_state = NULL,
+
+	// .early_init = vce_v1_0_early_init,
+	// .late_init = NULL,
+	// .sw_init = vce_v1_0_sw_init,
+	// .sw_fini = vce_v1_0_sw_fini,
+	// .hw_init = vce_v1_0_hw_init,
+	// .hw_fini = vce_v1_0_hw_fini,
+	// .suspend = vce_v1_0_suspend,
+	// .resume = vce_v1_0_resume,
+	// .is_idle = vce_v1_0_is_idle,
+	// .wait_for_idle = vce_v1_0_wait_for_idle,
+	// .soft_reset = vce_v1_0_soft_reset,
+	// .set_clockgating_state = vce_v1_0_set_clockgating_state,
+	// .set_powergating_state = vce_v1_0_set_powergating_state,
+};
+
+static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev)
+{
+	int i;
+
+	for (i = 0; i < adev->vce.num_rings; i++)
+		adev->vce.ring[i].funcs = &vce_v1_0_ring_funcs;
+}
+
+const struct amdgpu_ip_block_version vce_v1_0_ip_block =
+{
+		.type = AMD_IP_BLOCK_TYPE_VCE,
+		.major = 1,
+		.minor = 0,
+		.rev = 0,
+		.funcs = &vce_v1_0_ip_funcs,
+};
