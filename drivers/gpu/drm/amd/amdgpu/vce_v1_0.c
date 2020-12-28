@@ -126,6 +126,7 @@ static void vce_v1_0_disable_cg(struct amdgpu_device *adev)
 	WREG32(mmVCE_CGTT_CLK_OVERRIDE, 7);
 }
 
+/* Not used for now since we are relying on original VCE1 enable_mgcg()*/
 /* Based on VCE2, but with VCE1's mgcg code */
 static void vce_v1_0_set_sw_cg(struct amdgpu_device *adev, bool gated)
 {
@@ -163,11 +164,12 @@ static void vce_v1_0_set_sw_cg(struct amdgpu_device *adev, bool gated)
 	}
 }
 
+/* Not used for now since we are relying on original VCE1 enable_mgcg()*/
+/* Based on VCE2, but with VCE1's mgcg code */
 static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
 {
 	u32 orig, tmp;
 
-	/* Not tested, validated, implemented */
 	// Portage debug
 	DRM_INFO("%s not tested and validated.\n", __FUNCTION__);
 
@@ -209,6 +211,37 @@ static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
 static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
 								bool sw_cg)
 {
+	u32 tmp;
+
+	if (enable && (adev->cg_flags & AMD_CG_SUPPORT_VCE_MGCG)) {
+		tmp = RREG32(mmVCE_CLOCK_GATING_A);
+		tmp |= CGC_DYN_CLOCK_MODE;
+		WREG32(mmVCE_CLOCK_GATING_A, tmp);
+
+		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
+		tmp &= ~0x1ff000;
+		tmp |= 0xff800000;
+		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
+
+		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
+		tmp &= ~0x3ff;
+		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
+	} else {
+		tmp = RREG32(mmVCE_CLOCK_GATING_A);
+		tmp &= ~CGC_DYN_CLOCK_MODE;
+		WREG32(mmVCE_CLOCK_GATING_A, tmp);
+
+		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
+		tmp |= 0x1ff000;
+		tmp &= ~0xff800000;
+		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
+
+		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
+		tmp |= 0x3ff;
+		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
+	}
+
+/*
 	if (enable && (adev->cg_flags & AMD_CG_SUPPORT_VCE_MGCG)) {
 		if (sw_cg)
 			vce_v1_0_set_sw_cg(adev, true);
@@ -222,6 +255,7 @@ static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
 		else
 			vce_v1_0_set_dyn_cg(adev, false);
 	}
+*/
 }
 
 /* Keeping original code from radeon for now... */
