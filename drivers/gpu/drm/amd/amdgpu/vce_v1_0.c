@@ -45,6 +45,7 @@
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
 #define VCE_V1_0_DATA_SIZE	(7808 * (AMDGPU_MAX_VCE_HANDLES + 1))
 
+/*
 struct vce_v1_0_fw_signature
 {
 	int32_t off;
@@ -57,6 +58,7 @@ struct vce_v1_0_fw_signature
 		uint32_t sigval[4];
 	} val[8];
 };
+*/
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
 static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
 static int vce_v1_0_wait_for_idle(void *handle);
@@ -245,6 +247,7 @@ static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 	WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 }
 
+/*
 int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
 {
 	struct vce_v1_0_fw_signature *sign = (void*)rdev->vce_fw->data;
@@ -369,6 +372,7 @@ int vce_v1_0_resume(struct radeon_device *rdev)
 
 	return 0;
 }
+*/
 
 /**
  * vce_v1_0_start - start VCE block
@@ -377,12 +381,13 @@ int vce_v1_0_resume(struct radeon_device *rdev)
  *
  * Setup and start the VCE block
  */
+/*
 int vce_v1_0_start(struct radeon_device *rdev)
 {
 	struct radeon_ring *ring;
 	int i, j, r;
 
-	/* set BUSY flag */
+	// set BUSY flag
 	WREG32_P(VCE_STATUS, 1, ~1);
 
 	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
@@ -433,7 +438,7 @@ int vce_v1_0_start(struct radeon_device *rdev)
 		r = -1;
 	}
 
-	/* clear BUSY flag */
+	// clear BUSY flag
 	WREG32_P(VCE_STATUS, 0, ~1);
 
 	if (r) {
@@ -443,7 +448,8 @@ int vce_v1_0_start(struct radeon_device *rdev)
 
 	return 0;
 }
-
+*/
+/*
 int vce_v1_0_init(struct radeon_device *rdev)
 {
 	struct radeon_ring *ring;
@@ -473,6 +479,8 @@ int vce_v1_0_init(struct radeon_device *rdev)
 
 	return 0;
 }
+*/
+
 
 /* !!! Same structure as under si_ih.c and variables defines as for VCE 2 and 3 */
 static bool vce_v1_0_is_idle(void *handle)
