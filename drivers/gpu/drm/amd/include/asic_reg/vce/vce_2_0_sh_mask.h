@@ -24,6 +24,17 @@
 #ifndef VCE_2_0_SH_MASK_H
 #define VCE_2_0_SH_MASK_H
 
+/* Imported from cikd.h in radeon */
+#	define CGC_CLK_GATE_DLY_TIMER_MASK	(0xf << 0)
+#	define CGC_CLK_GATE_DLY_TIMER(x)	((x) << 0)
+#	define CGC_CLK_GATER_OFF_DLY_TIMER_MASK	(0xff << 4)
+#	define CGC_CLK_GATER_OFF_DLY_TIMER(x)	((x) << 4)
+#	define CGC_UENC_WAIT_AWAKE	(1 << 18)
+#	define CLOCK_ON_DELAY_MASK	(0xf << 0)
+#	define CLOCK_ON_DELAY(x)	((x) << 0)
+#	define CLOCK_OFF_DELAY_MASK	(0xff << 4)
+#	define CLOCK_OFF_DELAY(x)	((x) << 4)
+
 #define VCE_STATUS__JOB_BUSY_MASK 0x1
 #define VCE_STATUS__JOB_BUSY__SHIFT 0x0
 #define VCE_STATUS__VCPU_REPORT_MASK 0xfe

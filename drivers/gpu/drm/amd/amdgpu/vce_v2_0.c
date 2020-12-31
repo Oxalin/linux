@@ -149,14 +149,14 @@ static void vce_v2_0_init_cg(struct amdgpu_device *adev)
 	u32 tmp;
 
 	tmp = RREG32(mmVCE_CLOCK_GATING_A);
-	tmp &= ~0xfff;
-	tmp |= ((0 << 0) | (4 << 4));
-	tmp |= 0x40000;
+	tmp &= ~(CGC_CLK_GATE_DLY_TIMER_MASK | CGC_CLK_GATER_OFF_DLY_TIMER_MASK);
+	tmp |= (CGC_CLK_GATE_DLY_TIMER(0) | CGC_CLK_GATER_OFF_DLY_TIMER(4));
+	tmp |= CGC_UENC_WAIT_AWAKE;
 	WREG32(mmVCE_CLOCK_GATING_A, tmp);
 
 	tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
-	tmp &= ~0xfff;
-	tmp |= ((0 << 0) | (4 << 4));
+	tmp &= ~(CLOCK_ON_DELAY_MASK | CLOCK_OFF_DELAY_MASK);
+	tmp |= (CLOCK_ON_DELAY(0) | CLOCK_OFF_DELAY(4));
 	WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
 
 	tmp = RREG32(mmVCE_CLOCK_GATING_B);
