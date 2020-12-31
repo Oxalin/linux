@@ -834,6 +834,24 @@ static int vce_v1_0_set_clockgating_state(void *handle,
 	return 0;
 }
 
+static int vce_v1_0_set_powergating_state(void *handle,
+					  enum amd_powergating_state state)
+{
+	/* This doesn't actually powergate the VCE block.
+	 * That's done in the dpm code via the SMC.  This
+	 * just re-inits the block as necessary.  The actual
+	 * gating still happens in the dpm code.  We should
+	 * revisit this when there is a cleaner line between
+	 * the smc and the hw blocks
+	 */
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	if (state == AMD_PG_STATE_GATE)
+		return vce_v1_0_stop(adev);
+	else
+		return vce_v1_0_start(adev);
+}
+
 static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.name = "vce_v1_0",
 	.early_init = vce_v1_0_early_init,
@@ -848,7 +866,7 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.wait_for_idle = vce_v1_0_wait_for_idle,
 	.soft_reset = NULL,
 	.set_clockgating_state = vce_v1_0_set_clockgating_state,
-	.set_powergating_state = NULL,
+	.set_powergating_state = vce_v1_0_set_powergating_state,
 
 	// .early_init = vce_v1_0_early_init,
 	// .late_init = NULL,
