@@ -374,7 +374,7 @@ int vce_v1_0_start(struct radeon_device *rdev)
 
 	WREG32_P(VCE_VCPU_CNTL, VCE_CLK_EN, ~VCE_CLK_EN);
 
-	WREG32_P(VCE_SOFT_RESET,
+	WREG32_P(mmVCE_SOFT_RESET,
 		 VCE_ECPU_SOFT_RESET |
 		 VCE_FME_SOFT_RESET, ~(
 		 VCE_ECPU_SOFT_RESET |
@@ -382,7 +382,7 @@ int vce_v1_0_start(struct radeon_device *rdev)
 
 	mdelay(100);
 
-	WREG32_P(VCE_SOFT_RESET, 0, ~(
+	WREG32_P(mmVCE_SOFT_RESET, 0, ~(
 		 VCE_ECPU_SOFT_RESET |
 		 VCE_FME_SOFT_RESET));
 
@@ -399,9 +399,9 @@ int vce_v1_0_start(struct radeon_device *rdev)
 			break;
 
 		DRM_ERROR("VCE not responding, trying to reset the ECPU!!!\n");
-		WREG32_P(VCE_SOFT_RESET, VCE_ECPU_SOFT_RESET, ~VCE_ECPU_SOFT_RESET);
+		WREG32_P(mmVCE_SOFT_RESET, VCE_ECPU_SOFT_RESET, ~VCE_ECPU_SOFT_RESET);
 		mdelay(10);
-		WREG32_P(VCE_SOFT_RESET, 0, ~VCE_ECPU_SOFT_RESET);
+		WREG32_P(mmVCE_SOFT_RESET, 0, ~VCE_ECPU_SOFT_RESET);
 		mdelay(10);
 		r = -1;
 	}
@@ -561,17 +561,15 @@ static int vce_v1_0_early_init(void *handle)
 	return 0;
 }
 
-/* It seems to be right compared to other VCE versions */
+/* It seems to be right compared to other VCE versions and UVD 3.1 */
 static int vce_v1_0_sw_init(void *handle)
 {
 	struct amdgpu_ring *ring;
 	int r, i;
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
-	/* VCE */
-	/* This IRQ value wasn't used under radeon for SI. It was introduced under CIK (cik.c). 
-		 However, it seems logical to add it also for SI. */
-	r = amdgpu_irq_add_id(adev, AMDGPU_IH_CLIENTID_LEGACY, 167, &adev->vce.irq);
+	/* VCE TRAP */
+	r = amdgpu_irq_add_id(adev, AMDGPU_IRQ_CLIENTID_LEGACY, 167, &adev->vce.irq);
 	if (r)
 		return r;
 
@@ -588,10 +586,13 @@ static int vce_v1_0_sw_init(void *handle)
 		ring = &adev->vce.ring[i];
 		sprintf(ring->name, "vce%d", i);
 		r = amdgpu_ring_init(adev, ring, 512,
-				     &adev->vce.irq, 0);
+				     &adev->vce.irq, 0,
+				     AMDGPU_RING_PRIO_DEFAULT);
 		if (r)
 			return r;
 	}
+
+	r = amdgpu_vce_entity_init(adev);
 
 	// Portage debug
 	DRM_INFO("%s succeeded.\n", __FUNCTION__);
@@ -828,7 +829,7 @@ static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev)
 {
 	adev->vce.irq.num_types = 1;
 	adev->vce.irq.funcs = &vce_v1_0_irq_funcs;
-};
+}
 
 const struct amdgpu_ip_block_version vce_v1_0_ip_block =
 {
