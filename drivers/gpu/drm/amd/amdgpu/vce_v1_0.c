@@ -119,6 +119,26 @@ static void vce_v1_0_ring_set_wptr(struct amdgpu_ring *ring)
 	else
 		WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
 }
+
+/* !!! To validate. This is taken from VCE2.0. While the logic is similar for start() and firmware_loaded(), this should be similar for stop() and its checkups. */
+/* It is also similar at how it is done under UVD 3.1 */
+static int vce_v1_0_lmi_clean(struct amdgpu_device *adev)
+{
+	int i, j;
+
+	for (i = 0; i < 10; ++i) {
+		for (j = 0; j < 100; ++j) {
+			uint32_t status = RREG32(mmVCE_LMI_STATUS);
+
+			if (status & 0x337f)
+				return 0;
+			mdelay(10);
+		}
+	}
+
+	return -ETIMEDOUT;
+}
+
 static int vce_v1_0_firmware_loaded(struct amdgpu_device *adev)
 {
 	int i, j;
@@ -423,6 +443,52 @@ static int vce_v1_0_start(struct amdgpu_device *rdev)
 		DRM_ERROR("VCE not responding, giving up!!!\n");
 		return r;
 	}
+
+	return 0;
+}
+
+/* !!! To validate. This is directly taken from VCE2.0. While the logic is similar for start(), the same should apply for stop(). */
+/* This is also similar to how it is done under UVD 3.1 */
+/**
+ * vce_v1_0_stop - stop VCE block
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * stop the VCE block
+ */
+static int vce_v1_0_stop(struct amdgpu_device *adev)
+{
+	int i;
+	int status;
+
+	if (vce_v1_0_lmi_clean(adev)) {
+		DRM_INFO("VCE is not idle \n");
+		return 0;
+	}
+
+	if (vce_v1_0_wait_for_idle(adev)) {
+		DRM_INFO("VCE is busy, can't set clock gating");
+		return 0;
+	}
+
+	/* Stall UMC and register bus before resetting VCPU */
+	/* I think the magic values should be replaced by VCE_LMI_CTRL2__STALL_ARB_UMC_[MASK,_SHIFT] */
+	WREG32_P(mmVCE_LMI_CTRL2, 1 << 8, ~(1 << 8));
+
+	for (i = 0; i < 100; ++i) {
+		status = RREG32(mmVCE_LMI_STATUS);
+		if (status & 0x240)
+			break;
+		mdelay(1);
+	}
+
+	WREG32_P(mmVCE_VCPU_CNTL, 0, ~0x80001);
+
+	/* put LMI, VCPU, RBC etc... into reset */
+	/* Magic values that should be similar to the ones used under UVD 3.1 */
+	WREG32_P(mmVCE_SOFT_RESET, 1, ~0x1);
+
+	WREG32(mmVCE_STATUS, 0);
 
 	return 0;
 }
