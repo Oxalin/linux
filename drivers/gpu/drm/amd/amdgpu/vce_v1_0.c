@@ -780,6 +780,19 @@ static int vce_v1_0_resume(void *handle)
 
 }
 
+/* !!! To valide. Ported from VCE2.0 and later */
+/* However, VCE 3.0 uses an approach a lot similar to si_ih_soft_reset()... 
+	 This could be an alternative... */
+static int vce_v1_0_soft_reset(void *handle)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+
+	WREG32_FIELD(SRBM_SOFT_RESET, SOFT_RESET_VCE, 1);
+	mdelay(5);
+
+	return vce_v1_0_start(adev);
+}
+
 /* Ported from VCE2.0 and later */
 static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
 					struct amdgpu_irq_src *source,
@@ -864,7 +877,7 @@ static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.resume = vce_v1_0_resume,
 	.is_idle = vce_v1_0_is_idle,
 	.wait_for_idle = vce_v1_0_wait_for_idle,
-	.soft_reset = NULL,
+	.soft_reset = vce_v1_0_soft_reset,
 	.set_clockgating_state = vce_v1_0_set_clockgating_state,
 	.set_powergating_state = vce_v1_0_set_powergating_state,
 
