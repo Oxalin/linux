@@ -234,7 +234,7 @@ int vce_v1_0_resume(struct radeon_device *rdev)
 
 	WREG32(VCE_VCPU_SCRATCH7, RADEON_MAX_VCE_HANDLES);
 
-	addr += 256;
+	addr += RADEON_VCE_FIRMWARE_OFFSET;
 	size = VCE_V1_0_FW_SIZE;
 	WREG32(VCE_VCPU_CACHE_OFFSET0, addr & 0x7fffffff);
 	WREG32(VCE_VCPU_CACHE_SIZE0, size);

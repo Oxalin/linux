@@ -44,7 +44,7 @@
 
 /* Initialization path:
  *  We expect that acceleration initialization might fail for various
- *  reasons even thought we work hard to make it works on most
+ *  reasons even thought we work hard to make it work on most
  *  configurations. In order to still have a working userspace in such
  *  situation the init path must succeed up to the memory controller
  *  initialization point. Failure before this point are considered as
@@ -1712,6 +1712,7 @@ int radeon_uvd_send_upll_ctlreq(struct radeon_device *rdev,
  * VCE
  */
 #define RADEON_MAX_VCE_HANDLES	16
+#define RADEON_VCE_FIRMWARE_OFFSET 256
 
 struct radeon_vce {
 	struct radeon_bo	*vcpu_bo;
