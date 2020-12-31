@@ -112,6 +112,13 @@ static void si_dma_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
 	amdgpu_ring_write(ring, DMA_PACKET(DMA_PACKET_TRAP, 0, 0, 0, 0));
 }
 
+/**
+ * si_dma_stop - stop the async dma engines
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Stop the async dma ring buffers (SI).
+ */
 static void si_dma_stop(struct amdgpu_device *adev)
 {
 	struct amdgpu_ring *ring;
