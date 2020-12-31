@@ -24,9 +24,9 @@
 #define VCE_1_0_D_H
 
 /* Imported from sid.h or cleaned up */
-// #define VCE_FW_REG_STATUS				0x20e10
-// #define VCE_LMI_FW_START_KEYSEL				0x20e18
-// #define VCE_LMI_FW_PERIODIC_CTRL			0x20e20
+#define mmVCE_FW_REG_STATUS				0x89C0 //0x20e10
+#define mmVCE_LMI_FW_START_KEYSEL				0x89C8 //0x20e18
+#define mmVCE_LMI_FW_PERIODIC_CTRL			0x89D0 //0x20e20
 
 #define VCE_CMD_NO_OP					0x00000000
 #define VCE_CMD_END					0x00000001
@@ -46,6 +46,7 @@
 #define mmVCE_VCPU_CACHE_SIZE1 0x800C
 #define mmVCE_VCPU_CACHE_OFFSET2 0x800D
 #define mmVCE_VCPU_CACHE_SIZE2 0x800E
+#define mmVCE_VCPU_SCRATCH7 0x8004 //0x200dc
 #define mmVCE_SOFT_RESET 0x8048
 #define mmVCE_RB_BASE_LO2 0x805B
 #define mmVCE_RB_BASE_HI2 0x805C

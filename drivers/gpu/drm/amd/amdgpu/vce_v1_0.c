@@ -340,72 +340,6 @@ unsigned vce_v1_0_bo_size(struct radeon_device *rdev)
 	WARN_ON(VCE_V1_0_FW_SIZE < rdev->vce_fw->size);
 	return VCE_V1_0_FW_SIZE + VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE;
 }
-
-int vce_v1_0_resume(struct radeon_device *rdev)
-{
-	uint64_t addr = rdev->vce.gpu_addr;
-	uint32_t size;
-	int i;
-
-	WREG32_P(VCE_CLOCK_GATING_A, 0, ~(1 << 16));
-	WREG32_P(VCE_UENC_CLOCK_GATING, 0x1FF000, ~0xFF9FF000);
-	WREG32_P(VCE_UENC_REG_CLOCK_GATING, 0x3F, ~0x3F);
-	WREG32(VCE_CLOCK_GATING_B, 0);
-
-	WREG32_P(VCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
-
-	WREG32(VCE_LMI_CTRL, 0x00398000);
-	WREG32_P(VCE_LMI_CACHE_CTRL, 0x0, ~0x1);
-	WREG32(VCE_LMI_SWAP_CNTL, 0);
-	WREG32(VCE_LMI_SWAP_CNTL1, 0);
-	WREG32(VCE_LMI_VM_CTRL, 0);
-
-	WREG32(VCE_VCPU_SCRATCH7, RADEON_MAX_VCE_HANDLES);
-
-	addr += 256;
-	size = VCE_V1_0_FW_SIZE;
-	WREG32(VCE_VCPU_CACHE_OFFSET0, addr & 0x7fffffff);
-	WREG32(VCE_VCPU_CACHE_SIZE0, size);
-
-	addr += size;
-	size = VCE_V1_0_STACK_SIZE;
-	WREG32(VCE_VCPU_CACHE_OFFSET1, addr & 0x7fffffff);
-	WREG32(VCE_VCPU_CACHE_SIZE1, size);
-
-	addr += size;
-	size = VCE_V1_0_DATA_SIZE;
-	WREG32(VCE_VCPU_CACHE_OFFSET2, addr & 0x7fffffff);
-	WREG32(VCE_VCPU_CACHE_SIZE2, size);
-
-	WREG32_P(VCE_LMI_CTRL2, 0x0, ~0x100);
-
-	WREG32(VCE_LMI_FW_START_KEYSEL, rdev->vce.keyselect);
-
-	for (i = 0; i < 10; ++i) {
-		mdelay(10);
-		if (RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_DONE)
-			break;
-	}
-
-	if (i == 10)
-		return -ETIMEDOUT;
-
-	if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_PASS))
-		return -EINVAL;
-
-	for (i = 0; i < 10; ++i) {
-		mdelay(10);
-		if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_BUSY))
-			break;
-	}
-
-	if (i == 10)
-		return -ETIMEDOUT;
-
-	vce_v1_0_init_cg(rdev);
-
-	return 0;
-}
 */
 
 /**
@@ -515,6 +449,85 @@ int vce_v1_0_init(struct radeon_device *rdev)
 }
 */
 
+/* !!! Still some variables to port */
+/* From CIK under radeon and amdgpu, it seems mc_resume() is mostly resume() 
+	without init_cg(). */
+static void vce_v1_0_mc_resume(struct amdgpu_device *adev)
+{
+	uint64_t addr = adev->vce.gpu_addr;
+	uint32_t size;
+	int i, r;
+
+	WREG32_P(mmVCE_CLOCK_GATING_A, 0, ~(1 << 16));
+	WREG32_P(mmVCE_UENC_CLOCK_GATING, 0x1FF000, ~0xFF9FF000);
+	WREG32_P(mmVCE_UENC_REG_CLOCK_GATING, 0x3F, ~0x3F);
+	WREG32(mmVCE_CLOCK_GATING_B, 0);
+
+	WREG32_P(mmVCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
+
+	WREG32(mmVCE_LMI_CTRL, 0x00398000);
+	WREG32_P(mmVCE_LMI_CACHE_CTRL, 0x0, ~0x1);
+	WREG32(mmVCE_LMI_SWAP_CNTL, 0);
+	WREG32(mmVCE_LMI_SWAP_CNTL1, 0);
+	WREG32(mmVCE_LMI_VM_CTRL, 0);
+
+	WREG32(VCE_VCPU_SCRATCH7, AMDGPU_MAX_VCE_HANDLES);
+
+	addr += AMDGPU_VCE_FIRMWARE_OFFSET;
+	size = VCE_V1_0_FW_SIZE;
+	WREG32(mmVCE_VCPU_CACHE_OFFSET0, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_SIZE0, size);
+
+	addr += size;
+	size = VCE_V1_0_STACK_SIZE;
+	WREG32(mmVCE_VCPU_CACHE_OFFSET1, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_SIZE1, size);
+
+	addr += size;
+	size = VCE_V1_0_DATA_SIZE;
+	WREG32(mmVCE_VCPU_CACHE_OFFSET2, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_SIZE2, size);
+
+	WREG32_P(mmVCE_LMI_CTRL2, 0x0, ~0x100);
+}
+
+/**
+ * vce_v1_0_fw_validate - FW validation operation
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Initialate and check VCE validation.
+ */
+static int vce_v1_0_fw_validate(struct amdgpu_device *adev)
+{
+	int i;
+	uint32_t keysel = adev->vce.keyselect;
+
+	WREG32(VCE_LMI_FW_START_KEYSEL, adev->vce.keyselect);
+
+	for (i = 0; i < 10; ++i) {
+		mdelay(10);
+		if (RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_DONE)
+			break;
+	}
+
+	if (i == 10)
+		return -ETIMEDOUT;
+
+	if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_PASS))
+		return -EINVAL;
+
+	for (i = 0; i < 10; ++i) {
+		mdelay(10);
+		if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_BUSY))
+			break;
+	}
+
+	if (i == 10)
+		return -ETIMEDOUT;
+
+	return 0;
+}
 
 /* !!! Same structure as under si_ih.c and variables defines as for VCE 2 and 3 */
 static bool vce_v1_0_is_idle(void *handle)
@@ -612,16 +625,26 @@ static int vce_v1_0_sw_fini(void *handle)
 }
 
 /* !!! Ported from other VCE versions. */
+/**
+ * vce_v1_0_hw_init - start and test VCE block
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Initialize the hardware, boot up the VCPU and do some testing
+ */
 static int vce_v1_0_hw_init(void *handle)
 {
 	int r, i;
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
+	r = vce_v1_0_fw_validate(adev);
+	if (r) {
+		DRM_ERROR("amdgpu: VCE Firmware validate fail (%d).\n", r);
+		return r;
+	}
+
 	amdgpu_asic_set_vce_clocks(adev, 10000, 10000);
 	vce_v1_0_enable_mgcg(adev, true, false);
-
-	// Portage debug
-	DRM_INFO("%s - enable_mgcg succeeded.\n", __FUNCTION__);
 
 	for (i = 0; i < adev->vce.num_rings; i++)
 		adev->vce.ring[i].ready = false;
