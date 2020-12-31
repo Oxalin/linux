@@ -44,6 +44,7 @@
 #define VCE_V1_0_FW_SIZE	(256 * 1024)
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
 #define VCE_V1_0_DATA_SIZE	(7808 * (AMDGPU_MAX_VCE_HANDLES + 1))
+#define VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK	0x02
 
 /*
 struct vce_v1_0_fw_signature
@@ -118,7 +119,28 @@ static void vce_v1_0_ring_set_wptr(struct amdgpu_ring *ring)
 	else
 		WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
 }
+static int vce_v1_0_firmware_loaded(struct amdgpu_device *adev)
+{
+	int i, j;
 
+	for (i = 0; i < 10; ++i) {
+		for (j = 0; j < 100; ++j) {
+			uint32_t status = RREG32(mmVCE_STATUS);
+
+			if (status & VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK)
+				return 0;
+			mdelay(10);
+		}
+
+		DRM_ERROR("VCE not responding, trying to reset the ECPU!!!\n");
+		WREG32_P(mmVCE_SOFT_RESET, VCE_ECPU_SOFT_RESET, ~VCE_ECPU_SOFT_RESET);
+		mdelay(10);
+		WREG32_P(mmVCE_SOFT_RESET, 0, ~VCE_ECPU_SOFT_RESET);
+		mdelay(10);
+	}
+
+	return -ETIMEDOUT;
+}
 
 /* TODO !!! Validate taken from VCE2.0 */
 static void vce_v1_0_disable_cg(struct amdgpu_device *adev)
@@ -345,32 +367,38 @@ unsigned vce_v1_0_bo_size(struct radeon_device *rdev)
 /**
  * vce_v1_0_start - start VCE block
  *
- * @rdev: radeon_device pointer
+ * @adev: amdgpu_device pointer
  *
  * Setup and start the VCE block
  */
-/*
-int vce_v1_0_start(struct radeon_device *rdev)
+static int vce_v1_0_start(struct amdgpu_device *rdev)
 {
-	struct radeon_ring *ring;
-	int i, j, r;
+	struct amdgpu_ring *ring;
+	int r;
 
 	// set BUSY flag
-	WREG32_P(VCE_STATUS, 1, ~1);
+	WREG32_P(mmVCE_STATUS, 1, ~1);
 
-	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
-	WREG32(VCE_RB_RPTR, ring->wptr);
-	WREG32(VCE_RB_WPTR, ring->wptr);
-	WREG32(VCE_RB_BASE_LO, ring->gpu_addr);
-	WREG32(VCE_RB_BASE_HI, upper_32_bits(ring->gpu_addr));
-	WREG32(VCE_RB_SIZE, ring->ring_size / 4);
+/* Imported from VCE 2.0, may not be needed */
+/*
+	vce_v1_0_init_cg(adev);
+	vce_v1_0_disable_cg(adev);
 
-	ring = &rdev->ring[TN_RING_TYPE_VCE2_INDEX];
-	WREG32(VCE_RB_RPTR2, ring->wptr);
-	WREG32(VCE_RB_WPTR2, ring->wptr);
-	WREG32(VCE_RB_BASE_LO2, ring->gpu_addr);
-	WREG32(VCE_RB_BASE_HI2, upper_32_bits(ring->gpu_addr));
-	WREG32(VCE_RB_SIZE2, ring->ring_size / 4);
+	vce_v1_0_mc_resume(adev);
+*/
+	ring = &adev->vce.ring[0];
+	WREG32(mmVCE_RB_RPTR, lower_32_bits(ring->wptr));
+	WREG32(mmVCE_RB_WPTR, lower_32_bits(ring->wptr));
+	WREG32(mmVCE_RB_BASE_LO, ring->gpu_addr);
+	WREG32(mmVCE_RB_BASE_HI, upper_32_bits(ring->gpu_addr));
+	WREG32(mmVCE_RB_SIZE, ring->ring_size / 4);
+
+	ring = &adev->vce.ring[1];
+	WREG32(mmVCE_RB_RPTR2, lower_32_bits(ring->wptr));
+	WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
+	WREG32(mmVCE_RB_BASE_LO2, ring->gpu_addr);
+	WREG32(mmVCE_RB_BASE_HI2, upper_32_bits(ring->gpu_addr));
+	WREG32(mmVCE_RB_SIZE2, ring->ring_size / 4);
 
 	WREG32_P(VCE_VCPU_CNTL, VCE_CLK_EN, ~VCE_CLK_EN);
 
@@ -386,28 +414,10 @@ int vce_v1_0_start(struct radeon_device *rdev)
 		 VCE_ECPU_SOFT_RESET |
 		 VCE_FME_SOFT_RESET));
 
-	for (i = 0; i < 10; ++i) {
-		uint32_t status;
-		for (j = 0; j < 100; ++j) {
-			status = RREG32(VCE_STATUS);
-			if (status & 2)
-				break;
-			mdelay(10);
-		}
-		r = 0;
-		if (status & 2)
-			break;
-
-		DRM_ERROR("VCE not responding, trying to reset the ECPU!!!\n");
-		WREG32_P(mmVCE_SOFT_RESET, VCE_ECPU_SOFT_RESET, ~VCE_ECPU_SOFT_RESET);
-		mdelay(10);
-		WREG32_P(mmVCE_SOFT_RESET, 0, ~VCE_ECPU_SOFT_RESET);
-		mdelay(10);
-		r = -1;
-	}
+	r = vce_v1_0_firmware_loaded(adev);
 
 	// clear BUSY flag
-	WREG32_P(VCE_STATUS, 0, ~1);
+	WREG32_P(mmVCE_STATUS, 0, ~1);
 
 	if (r) {
 		DRM_ERROR("VCE not responding, giving up!!!\n");
@@ -416,7 +426,6 @@ int vce_v1_0_start(struct radeon_device *rdev)
 
 	return 0;
 }
-*/
 /*
 int vce_v1_0_init(struct radeon_device *rdev)
 {
