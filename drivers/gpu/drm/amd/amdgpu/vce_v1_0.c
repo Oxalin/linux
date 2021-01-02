@@ -715,22 +715,22 @@ static int vce_v1_0_hw_init(void *handle)
 
 	r = vce_v1_0_fw_validate(adev);
 	if (r) {
-		DRM_ERROR("amdgpu: VCE Firmware validate fail (%d).\n", r);
+		DRM_ERROR("AMDGPU: VCE Firmware validate failed (%d).\n", r);
 		return r;
 	}
 
 	amdgpu_asic_set_vce_clocks(adev, 10000, 10000);
 	vce_v1_0_enable_mgcg(adev, true, false);
 
-	for (i = 0; i < adev->vce.num_rings; i++)
-		adev->vce.ring[i].ready = false;
+//	for (i = 0; i < adev->vce.num_rings; i++)
+//		adev->vce.ring[i].ready = false;
 
 	for (i = 0; i < adev->vce.num_rings; i++) {
 		r = amdgpu_ring_test_ring(&adev->vce.ring[i]);
 		if (r)
 			return r;
-		else
-			adev->vce.ring[i].ready = true;
+//		else
+//			adev->vce.ring[i].ready = true;
 	}
 
 	DRM_INFO("VCE initialized successfully.\n");
