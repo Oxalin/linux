@@ -26,7 +26,7 @@
  */
 
 #include <linux/firmware.h>
-#include <drm/drmP.h>
+
 #include "amdgpu.h"
 #include "amdgpu_vce.h"
 #include "sid.h"
@@ -250,7 +250,7 @@ static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
 		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
 }
 
-static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
+void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
 								bool sw_cg)
 {
 	u32 tmp;
