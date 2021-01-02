@@ -420,7 +420,7 @@ static int vce_v1_0_start(struct amdgpu_device *rdev)
 	WREG32(mmVCE_RB_BASE_HI2, upper_32_bits(ring->gpu_addr));
 	WREG32(mmVCE_RB_SIZE2, ring->ring_size / 4);
 
-	WREG32_P(VCE_VCPU_CNTL, VCE_CLK_EN, ~VCE_CLK_EN);
+	WREG32_P(mmVCE_VCPU_CNTL, VCE_CLK_EN, ~VCE_CLK_EN);
 
 	WREG32_P(mmVCE_SOFT_RESET,
 		 VCE_ECPU_SOFT_RESET |
