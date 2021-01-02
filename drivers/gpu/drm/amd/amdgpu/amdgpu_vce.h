@@ -51,6 +51,8 @@ struct amdgpu_vce {
 	struct drm_sched_entity	entity;
 	uint32_t                srbm_soft_reset;
 	unsigned		num_rings;
+	/* for VCE 1.0 validation */
+	uint32_t                keyselect;
 };
 
 int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size);
