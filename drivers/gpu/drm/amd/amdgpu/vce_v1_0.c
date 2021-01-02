@@ -778,8 +778,6 @@ static int vce_v1_0_resume(void *handle)
 	return vce_v1_0_hw_init(adev);
 }
 
-}
-
 /* !!! To valide. Ported from VCE2.0 and later */
 /* However, VCE 3.0 uses an approach a lot similar to si_ih_soft_reset()... 
 	 This could be an alternative... */
@@ -945,16 +943,3 @@ const struct amdgpu_ip_block_version vce_v1_0_ip_block =
 		.rev = 0,
 		.funcs = &vce_v1_0_ip_funcs,
 };
-
-/* Imported from VCE2 since it was also modified from radeon to amdgpu under VCE2 */
-static int vce_v1_0_resume(void *handle)
-{
-	int r;
-	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
-
-	r = amdgpu_vce_resume(adev);
-	if (r)
-		return r;
-
-	return vce_v1_0_hw_init(adev);
-}
