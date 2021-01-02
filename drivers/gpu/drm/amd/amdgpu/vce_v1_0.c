@@ -530,12 +530,11 @@ static int vce_v1_0_start(struct amdgpu_device *adev)
 	WREG32_P(mmVCE_STATUS, 1, ~1);
 
 /* Imported from VCE 2.0, may not be needed */
-/*
 	vce_v1_0_init_cg(adev);
 	vce_v1_0_disable_cg(adev);
 
 	vce_v1_0_mc_resume(adev);
-*/
+
 	ring = &adev->vce.ring[0];
 	WREG32(mmVCE_RB_RPTR, lower_32_bits(ring->wptr));
 	WREG32(mmVCE_RB_WPTR, lower_32_bits(ring->wptr));
