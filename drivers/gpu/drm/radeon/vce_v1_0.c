@@ -34,6 +34,7 @@
 #define VCE_V1_0_FW_SIZE	(256 * 1024)
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
 #define VCE_V1_0_DATA_SIZE	(7808 * (RADEON_MAX_VCE_HANDLES + 1))
+#define VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK	0x02
 
 struct vce_v1_0_fw_signature
 {
@@ -251,6 +252,7 @@ int vce_v1_0_resume(struct radeon_device *rdev)
 
 	WREG32_P(VCE_LMI_CTRL2, 0x0, ~0x100);
 
+	/* Validate firmware */
 	WREG32(VCE_LMI_FW_START_KEYSEL, rdev->vce.keyselect);
 
 	for (i = 0; i < 10; ++i) {
@@ -322,16 +324,17 @@ int vce_v1_0_start(struct radeon_device *rdev)
 		 VCE_ECPU_SOFT_RESET |
 		 VCE_FME_SOFT_RESET));
 
+	/* Check if firmware is loaded */
 	for (i = 0; i < 10; ++i) {
 		uint32_t status;
 		for (j = 0; j < 100; ++j) {
 			status = RREG32(VCE_STATUS);
-			if (status & 2)
+			if (status & VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 				break;
 			mdelay(10);
 		}
 		r = 0;
-		if (status & 2)
+		if (status & VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 			break;
 
 		DRM_ERROR("VCE not responding, trying to reset the ECPU!!!\n");
@@ -339,7 +342,7 @@ int vce_v1_0_start(struct radeon_device *rdev)
 		mdelay(10);
 		WREG32_P(VCE_SOFT_RESET, 0, ~VCE_ECPU_SOFT_RESET);
 		mdelay(10);
-		r = -1;
+		r = -ETIMEDOUT;
 	}
 
 	/* clear BUSY flag */
