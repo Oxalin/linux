@@ -1904,6 +1904,14 @@
 #define	DMA_PACKET_POLL_REG_MEM				  0xe
 #define	DMA_PACKET_NOP					  0xf
 
+#define VCE_CMD_NO_OP					0x00000000
+#define VCE_CMD_END					0x00000001
+#define VCE_CMD_IB					0x00000002
+#define VCE_CMD_FENCE					0x00000003
+#define VCE_CMD_TRAP					0x00000004
+#define VCE_CMD_IB_AUTO					0x00000005
+#define VCE_CMD_SEMAPHORE				0x00000006
+
 //#dce stupp
 /* display controller offsets used for crtc/cur/lut/grph/viewport/etc. */
 #define SI_CRTC0_REGISTER_OFFSET                0 //(0x6df0 - 0x6df0)/4
