@@ -69,6 +69,7 @@ MODULE_FIRMWARE("amdgpu/hainan_smc.bin");
 MODULE_FIRMWARE("amdgpu/hainan_k_smc.bin");
 MODULE_FIRMWARE("amdgpu/banks_k_2_smc.bin");
 
+extern void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable, bool sw_cg);
 static const struct amd_pm_funcs si_dpm_funcs;
 
 union power_info {
@@ -6961,12 +6962,12 @@ static void si_set_vce_clock(struct amdgpu_device *adev,
 	    (old_rps->ecclk != new_rps->ecclk)) {
 		/* Turn the clocks on when encoding, off otherwise */
 		if (new_rps->evclk || new_rps->ecclk) {
-			/* Place holder for future VCE1.0 porting to amdgpu
-			vce_v1_0_enable_mgcg(adev, false, false);*/
+			/* Place holder for future VCE1.0 porting to amdgpu */
+			vce_v1_0_enable_mgcg(adev, false, false);
 		} else {
-			/* Place holder for future VCE1.0 porting to amdgpu
+			/* Place holder for future VCE1.0 porting to amdgpu */
 			vce_v1_0_enable_mgcg(adev, true, false);
-			amdgpu_asic_set_vce_clocks(adev, new_rps->evclk, new_rps->ecclk);*/
+			amdgpu_asic_set_vce_clocks(adev, new_rps->evclk, new_rps->ecclk);
 		}
 	}
 }
