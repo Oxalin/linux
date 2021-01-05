@@ -41,8 +41,6 @@
 
 #include "ivsrcid/vce/irqsrcs_vce_4_0.h"
 
-#define VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK	0x02
-
 #define VCE_V4_0_FW_SIZE	(384 * 1024)
 #define VCE_V4_0_STACK_SIZE	(64 * 1024)
 #define VCE_V4_0_DATA_SIZE	((16 * 1024 * AMDGPU_MAX_VCE_HANDLES) + (52 * 1024))
@@ -130,7 +128,7 @@ static int vce_v4_0_firmware_loaded(struct amdgpu_device *adev)
 			uint32_t status =
 				RREG32(SOC15_REG_OFFSET(VCE, 0, mmVCE_STATUS));
 
-			if (status & VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK)
+			if (status & VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 				return 0;
 			mdelay(10);
 		}
@@ -309,8 +307,8 @@ static int vce_v4_0_sriov_start(struct amdgpu_device *adev)
 						   ~VCE_SOFT_RESET__ECPU_SOFT_RESET_MASK, 0);
 
 		MMSCH_V1_0_INSERT_DIRECT_POLL(SOC15_REG_OFFSET(VCE, 0, mmVCE_STATUS),
-					      VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK,
-					      VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK);
+					      VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK,
+					      VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK);
 
 		/* clear BUSY flag */
 		MMSCH_V1_0_INSERT_DIRECT_RD_MOD_WT(SOC15_REG_OFFSET(VCE, 0, mmVCE_STATUS),

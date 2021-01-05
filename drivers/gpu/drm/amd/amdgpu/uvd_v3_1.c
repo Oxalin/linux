@@ -34,6 +34,8 @@
 #include "oss/oss_1_0_d.h"
 #include "oss/oss_1_0_sh_mask.h"
 
+#define UVD_STATUS__VCPU_REPORT_FW_LOADED_MASK	0x02
+
 /**
  * uvd_v3_1_ring_get_rptr - get read pointer
  *
@@ -379,12 +381,12 @@ static int uvd_v3_1_start(struct amdgpu_device *adev)
 		uint32_t status;
 		for (j = 0; j < 100; ++j) {
 			status = RREG32(mmUVD_STATUS);
-			if (status & 2)
+			if (status & UVD_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 				break;
 			mdelay(10);
 		}
 		r = 0;
-		if (status & 2)
+		if (status & UVD_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 			break;
 
 		DRM_ERROR("UVD not responding, trying to reset the VCPU!!!\n");

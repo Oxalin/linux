@@ -50,8 +50,6 @@
 #define mmVCE_LMI_VCPU_CACHE_40BIT_BAR2	0x8618
 #define mmGRBM_GFX_INDEX_DEFAULT 0xE0000000
 
-#define VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK	0x02
-
 #define VCE_V3_0_FW_SIZE	(384 * 1024)
 #define VCE_V3_0_STACK_SIZE	(64 * 1024)
 #define VCE_V3_0_DATA_SIZE	((16 * 1024 * AMDGPU_MAX_VCE_HANDLES) + (52 * 1024))
@@ -240,7 +238,7 @@ static int vce_v3_0_firmware_loaded(struct amdgpu_device *adev)
 		for (j = 0; j < 100; ++j) {
 			uint32_t status = RREG32(mmVCE_STATUS);
 
-			if (status & VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK)
+			if (status & VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK)
 				return 0;
 			mdelay(10);
 		}

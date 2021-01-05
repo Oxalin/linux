@@ -30,6 +30,8 @@
 #define VCE_STATUS__VCE_CONFIGURATION__SHIFT                                                                  0x16
 #define VCE_STATUS__VCE_INSTANCE_ID__SHIFT                                                                    0x18
 #define VCE_STATUS__JOB_BUSY_MASK                                                                             0x00000001L
+#define VCE_STATUS__VCPU_REPORT_FW_LOADED_MASK                                              0x02
+#define VCE_STATUS__VCPU_REPORT_FW_LOADED__SHIFT	0x00000000
 #define VCE_STATUS__VCPU_REPORT_MASK                                                                          0x000000FEL
 #define VCE_STATUS__UENC_BUSY_MASK                                                                            0x00000100L
 #define VCE_STATUS__VCE_CONFIGURATION_MASK                                                                    0x00C00000L
