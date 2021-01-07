@@ -61,7 +61,6 @@ struct vce_v1_0_fw_signature
 */
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
 static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
-static int vce_v1_0_wait_for_idle(void *handle);
 static int vce_v1_0_set_clockgating_state(void *handle,
 					  enum amd_clockgating_state state);
 
