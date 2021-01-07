@@ -491,7 +491,7 @@
 #define MC_CITF_MISC_WR_CG           			0x993
 #define MC_CITF_MISC_VM_CG           			0x994
 
-//	MC_ARB_RAMCFG
+#define	MC_ARB_RAMCFG					0x9D8
 #define		NOOFBANK_SHIFT					0
 #define		NOOFBANK_MASK					0x00000003
 #define		NOOFRANK_SHIFT					2

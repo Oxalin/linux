@@ -169,6 +169,7 @@ static void vce_v1_0_disable_cg(struct amdgpu_device *adev)
 	WREG32(mmVCE_CGTT_CLK_OVERRIDE, 7);
 }
 
+#if 0
 /* Not used for now since we are relying on original VCE1 enable_mgcg()*/
 /* Based on VCE2, but with VCE1's mgcg code */
 static void vce_v1_0_set_sw_cg(struct amdgpu_device *adev, bool gated)
@@ -250,7 +251,9 @@ static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
 	if(gated)
 		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
 }
+#endif
 
+/* Validated, ported from Radeon */
 void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
 								bool sw_cg)
 {
@@ -301,6 +304,7 @@ void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
 */
 }
 
+/* Validated */
 /* Keeping original code from radeon for now... */
 static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 {
@@ -324,20 +328,20 @@ static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 	WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 }
 
-/* !!! Still some variables to port */
+/* !!! Logic validated, but some variables ported from Radeon were calculated by offset to other already defined... This may be wrong. */
 /* From CIK under radeon and amdgpu, it seems mc_resume() is mostly resume() 
 	without init_cg(). */
 static void vce_v1_0_mc_resume(struct amdgpu_device *adev)
 {
-	uint64_t addr = adev->vce.gpu_addr;
-	uint32_t size;
+//	uint64_t addr = adev->vce.gpu_addr;
+	uint32_t size, offset;
 
 	WREG32_P(mmVCE_CLOCK_GATING_A, 0, ~(1 << 16));
 	WREG32_P(mmVCE_UENC_CLOCK_GATING, 0x1FF000, ~0xFF9FF000);
 	WREG32_P(mmVCE_UENC_REG_CLOCK_GATING, 0x3F, ~0x3F);
 	WREG32(mmVCE_CLOCK_GATING_B, 0);
 
-	WREG32_P(mmVCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
+//	WREG32_P(mmVCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
 
 	WREG32(mmVCE_LMI_CTRL, 0x00398000);
 	WREG32_P(mmVCE_LMI_CACHE_CTRL, 0x0, ~0x1);
@@ -345,24 +349,30 @@ static void vce_v1_0_mc_resume(struct amdgpu_device *adev)
 	WREG32(mmVCE_LMI_SWAP_CNTL1, 0);
 	WREG32(mmVCE_LMI_VM_CTRL, 0);
 
-	WREG32(mmVCE_VCPU_SCRATCH7, AMDGPU_MAX_VCE_HANDLES);
+//	WREG32(mmVCE_VCPU_SCRATCH7, AMDGPU_MAX_VCE_HANDLES);
+	WREG32(mmVCE_LMI_VCPU_CACHE_40BIT_BAR, (adev->vce.gpu_addr >> 8));
 
-	addr += AMDGPU_VCE_FIRMWARE_OFFSET;
+//	addr += AMDGPU_VCE_FIRMWARE_OFFSET;
+	offset = AMDGPU_VCE_FIRMWARE_OFFSET;
 	size = VCE_V1_0_FW_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET0, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_OFFSET0, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE0, size);
 
-	addr += size;
+//	addr += size;
+	offset += size;
 	size = VCE_V1_0_STACK_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET1, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_OFFSET1, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE1, size);
 
-	addr += size;
+//	addr += size;
+	offset += size;
 	size = VCE_V1_0_DATA_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET2, addr & 0x7fffffff);
+	WREG32(mmVCE_VCPU_CACHE_OFFSET2, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE2, size);
 
 	WREG32_P(mmVCE_LMI_CTRL2, 0x0, ~0x100);
+	/* Added from VCE 2 and over */
+	WREG32_FIELD(VCE_SYS_INT_EN, VCE_SYS_INT_TRAP_INTERRUPT_EN, 1);
 }
 
 /*
@@ -418,37 +428,28 @@ int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
 
 	return 0;
 }
-
-unsigned vce_v1_0_bo_size(struct radeon_device *rdev)
+*/
+/*
+unsigned vce_v1_0_bo_size(struct amdgpu_device *adev)
 {
-	WARN_ON(VCE_V1_0_FW_SIZE < rdev->vce_fw->size);
+	WARN_ON(VCE_V1_0_FW_SIZE < adev->vce_fw->size);
 	return VCE_V1_0_FW_SIZE + VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE;
 }
 */
 /*
-int vce_v1_0_init(struct radeon_device *rdev)
+int vce_v1_0_init(struct amdgpu_device *adev)
 {
-	struct radeon_ring *ring;
+	struct amdgpu_ring *ring;
 	int r;
 
-	r = vce_v1_0_start(rdev);
+	r = vce_v1_0_start(adev);
 	if (r)
 		return r;
 
-	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
-	ring->ready = true;
-	r = radeon_ring_test(rdev, TN_RING_TYPE_VCE1_INDEX, ring);
-	if (r) {
-		ring->ready = false;
-		return r;
-	}
-
-	ring = &rdev->ring[TN_RING_TYPE_VCE2_INDEX];
-	ring->ready = true;
-	r = radeon_ring_test(rdev, TN_RING_TYPE_VCE2_INDEX, ring);
-	if (r) {
-		ring->ready = false;
-		return r;
+	for (i = 0; i < adev->vce.num_rings; i++) {
+		r = amdgpu_ring_test_ring(&adev->vce.ring[i]);
+		if (r)
+			return r;
 	}
 
 	DRM_INFO("VCE initialized successfully.\n");
@@ -457,6 +458,7 @@ int vce_v1_0_init(struct radeon_device *rdev)
 }
 */
 
+#if 0
 /**
  * vce_v1_0_fw_validate - FW validation operation
  *
@@ -464,12 +466,15 @@ int vce_v1_0_init(struct radeon_device *rdev)
  *
  * Initialate and check VCE validation.
  */
+/* Validated, logic taken from Radeon code. 
+	!!! However, the keysel is not part of the original AMDGPU device structure 
+	and the variables were defined calculating offset from known variables... */
 static int vce_v1_0_fw_validate(struct amdgpu_device *adev)
 {
 	int i;
-	uint32_t keysel = adev->vce.keyselect;
+//	uint32_t keysel = adev->vce.keyselect;
 
-	WREG32(mmVCE_LMI_FW_START_KEYSEL, keysel);
+//	WREG32(mmVCE_LMI_FW_START_KEYSEL, keysel);
 
 	for (i = 0; i < 10; ++i) {
 		mdelay(10);
@@ -494,8 +499,11 @@ static int vce_v1_0_fw_validate(struct amdgpu_device *adev)
 
 	return 0;
 }
+#endif
 
-/* !!! Same structure as under si_ih.c and variables defines as for VCE 2 and 3 */
+/* !!! Same structure as under si_ih.c and variables defines as for VCE 2 and 3, and UVD 3.1 */
+/* The "handle" is pretty useless */
+/* Validated: use SRBM_STATUS2, since there is no VCE_BUSY_MASK for SRBM_STATUS. */
 static bool vce_v1_0_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
@@ -595,8 +603,8 @@ static int vce_v1_0_start(struct amdgpu_device *adev)
  */
 static int vce_v1_0_stop(struct amdgpu_device *adev)
 {
-	int i;
-	int status;
+	uint32_t i;
+	uint32_t status;
 
 	if (vce_v1_0_lmi_clean(adev)) {
 		DRM_INFO("VCE is not idle \n");
@@ -673,6 +681,15 @@ static int vce_v1_0_sw_init(void *handle)
 			return r;
 	}
 
+	/* From UVD 3.1. Retrieval firmware validate key */
+	/* This looks like a lot like load_fw()*/
+/*
+	ptr = adev->uvd.inst[0].cpu_addr;
+	ptr += 192 + 16;
+	memcpy(&ucode_len, ptr, 4);
+	ptr += ucode_len;
+	memcpy(&adev->uvd.keyselect, ptr, 4);
+*/
 	r = amdgpu_vce_entity_init(adev);
 
 	// Portage debug
@@ -718,25 +735,20 @@ static int vce_v1_0_hw_init(void *handle)
 {
 	int r, i;
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
-
+/*
 	r = vce_v1_0_fw_validate(adev);
 	if (r) {
 		DRM_ERROR("AMDGPU: VCE Firmware validate failed (%d).\n", r);
 		return r;
 	}
-
+*/
 	amdgpu_asic_set_vce_clocks(adev, 10000, 10000);
 	vce_v1_0_enable_mgcg(adev, true, false);
-
-//	for (i = 0; i < adev->vce.num_rings; i++)
-//		adev->vce.ring[i].ready = false;
 
 	for (i = 0; i < adev->vce.num_rings; i++) {
 		r = amdgpu_ring_test_ring(&adev->vce.ring[i]);
 		if (r)
 			return r;
-//		else
-//			adev->vce.ring[i].ready = true;
 	}
 
 	DRM_INFO("VCE initialized successfully.\n");
@@ -744,19 +756,34 @@ static int vce_v1_0_hw_init(void *handle)
 	return 0;
 }
 
+/**
+ * vce_v1_0_hw_fini - stop the hardware block
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Stop the VCE block, mark ring as not ready any more
+ */
+/* Taken from VCE 3 and UVD 3.1*/
+/* To validate. VCE 2.0 simply returns 0 */
 static int vce_v1_0_hw_fini(void *handle)
 {
-	return 0;
-/* Taken from VCE 3 */
-/* 	int r;
+ 	int r;
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
+// Debug, let's do this as under VCE 2.0
+return 0;
+
+	/**/
+/*
 	r = vce_v1_0_wait_for_idle(handle);
 	if (r)
 		return r;
+*/
 
-	vce_v1_0_stop(adev);
-	return vce_v1_0_set_clockgating_state(adev, AMD_CG_STATE_GATE); */
+	if (RREG32(mmVCE_STATUS) != 0)
+		vce_v1_0_stop(adev);
+
+	return vce_v1_0_set_clockgating_state(adev, AMD_CG_STATE_GATE);
 }
 
 static int vce_v1_0_suspend(void *handle)
@@ -784,14 +811,20 @@ static int vce_v1_0_resume(void *handle)
 	return vce_v1_0_hw_init(adev);
 }
 
-/* !!! To valide. Ported from VCE2.0 and later */
+/* !!! To valide. Ported from VCE2.0 and later. It is very similar to how UVD 3.1 does it. */
 /* However, VCE 3.0 uses an approach a lot similar to si_ih_soft_reset()... 
 	 This could be an alternative... */
 static int vce_v1_0_soft_reset(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
-	WREG32_FIELD(SRBM_SOFT_RESET, SOFT_RESET_VCE, 1);
+	/* This is how it is done under VCE 2.0 */
+//	WREG32_FIELD(SRBM_SOFT_RESET, SOFT_RESET_VCE, 1);
+	/* Ported from UVD 3.1, which seems pretty much like what VCE 2.0 does except for the stop() */
+	vce_v1_0_stop(adev);
+
+	WREG32_P(mmSRBM_SOFT_RESET, SRBM_SOFT_RESET__SOFT_RESET_VCE_MASK,
+			~SRBM_SOFT_RESET__SOFT_RESET_VCE_MASK);
 	mdelay(5);
 
 	return vce_v1_0_start(adev);
@@ -833,9 +866,14 @@ static int vce_v1_0_process_interrupt(struct amdgpu_device *adev,
 }
 
 /* !!! Code taken from VCE 2 */
+/* Validated, since this only set the state, if enable_mgcg is valide, this function must be. */
 static int vce_v1_0_set_clockgating_state(void *handle,
 					  enum amd_clockgating_state state)
 {
+
+	// Debug
+	return 0;
+
 	bool gate = false;
 	bool sw_cg = false;
 
@@ -854,6 +892,10 @@ static int vce_v1_0_set_clockgating_state(void *handle,
 static int vce_v1_0_set_powergating_state(void *handle,
 					  enum amd_powergating_state state)
 {
+
+	// Debug
+	return 0;
+
 	/* This doesn't actually powergate the VCE block.
 	 * That's done in the dpm code via the SMC.  This
 	 * just re-inits the block as necessary.  The actual
@@ -871,33 +913,33 @@ static int vce_v1_0_set_powergating_state(void *handle,
 
 static const struct amd_ip_funcs vce_v1_0_ip_funcs = {
 	.name = "vce_v1_0",
-	.early_init = vce_v1_0_early_init,
+//	.early_init = vce_v1_0_early_init,
 	.late_init = NULL,
-	.sw_init = vce_v1_0_sw_init,
-	.sw_fini = vce_v1_0_sw_fini,
-	.hw_init = vce_v1_0_hw_init,
-	.hw_fini = vce_v1_0_hw_fini,
-	.suspend = vce_v1_0_suspend,
-	.resume = vce_v1_0_resume,
-	.is_idle = vce_v1_0_is_idle,
-	.wait_for_idle = vce_v1_0_wait_for_idle,
-	.soft_reset = vce_v1_0_soft_reset,
-	.set_clockgating_state = vce_v1_0_set_clockgating_state,
-	.set_powergating_state = vce_v1_0_set_powergating_state,
+//	.sw_init = vce_v1_0_sw_init,
+//	.sw_fini = vce_v1_0_sw_fini,
+//	.hw_init = vce_v1_0_hw_init,
+//	.hw_fini = vce_v1_0_hw_fini,
+//	.suspend = vce_v1_0_suspend,
+//	.resume = vce_v1_0_resume,
+//	.is_idle = vce_v1_0_is_idle, // Validated
+//	.wait_for_idle = vce_v1_0_wait_for_idle, // Validated
+//	.soft_reset = vce_v1_0_soft_reset,
+//	.set_clockgating_state = vce_v1_0_set_clockgating_state, // Validated
+//	.set_powergating_state = vce_v1_0_set_powergating_state,
 
-	// .early_init = vce_v1_0_early_init,
-	// .late_init = NULL,
-	// .sw_init = vce_v1_0_sw_init,
-	// .sw_fini = vce_v1_0_sw_fini,
-	// .hw_init = vce_v1_0_hw_init,
-	// .hw_fini = vce_v1_0_hw_fini,
-	// .suspend = vce_v1_0_suspend,
-	// .resume = vce_v1_0_resume,
-	// .is_idle = vce_v1_0_is_idle,
-	// .wait_for_idle = vce_v1_0_wait_for_idle,
-	// .soft_reset = vce_v1_0_soft_reset,
-	// .set_clockgating_state = vce_v1_0_set_clockgating_state,
-	// .set_powergating_state = vce_v1_0_set_powergating_state,
+	.early_init = NULL,
+//	.late_init = NULL,
+	.sw_init = NULL,
+	.sw_fini = NULL,
+	.hw_init = NULL,
+	.hw_fini = NULL,
+	.suspend = NULL,
+	.resume = NULL,
+	.is_idle = NULL,
+	.wait_for_idle = NULL,
+	.soft_reset = NULL,
+	.set_clockgating_state = NULL,
+	.set_powergating_state = NULL,
 };
 
 /* !!! Values validated */

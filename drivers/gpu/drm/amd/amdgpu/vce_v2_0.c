@@ -203,6 +203,7 @@ static void vce_v2_0_mc_resume(struct amdgpu_device *adev)
 	WREG32_FIELD(VCE_SYS_INT_EN, VCE_SYS_INT_TRAP_INTERRUPT_EN, 1);
 }
 
+/* The "handle" is pretty useless */
 static bool vce_v2_0_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;

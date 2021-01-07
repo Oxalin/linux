@@ -74,8 +74,13 @@ static void vce_v2_0_set_dyn_cg(struct radeon_device *rdev, bool gated)
 {
 	u32 orig, tmp;
 
+/* LMI_MC/LMI_UMC always set in dynamic,
+ * set {CGC_*_GATE_MODE, CGC_*_SW_GATE} = {0, 0}
+ */
 	tmp = RREG32(VCE_CLOCK_GATING_B);
 	tmp &= ~0x00060006;
+
+/* Exception for ECPU, IH, SEM, SYS blocks needs to be turned on/off by SW */
 	if (gated) {
 		tmp |= 0xe10000;
 	} else {

@@ -6963,11 +6963,11 @@ static void si_set_vce_clock(struct amdgpu_device *adev,
 		/* Turn the clocks on when encoding, off otherwise */
 		if (new_rps->evclk || new_rps->ecclk) {
 			/* Place holder for future VCE1.0 porting to amdgpu */
-			vce_v1_0_enable_mgcg(adev, false, false);
+//			vce_v1_0_enable_mgcg(adev, false, false);
 		} else {
 			/* Place holder for future VCE1.0 porting to amdgpu */
-			vce_v1_0_enable_mgcg(adev, true, false);
-			amdgpu_asic_set_vce_clocks(adev, new_rps->evclk, new_rps->ecclk);
+//			vce_v1_0_enable_mgcg(adev, true, false);
+//			amdgpu_asic_set_vce_clocks(adev, new_rps->evclk, new_rps->ecclk);
 		}
 	}
 }
