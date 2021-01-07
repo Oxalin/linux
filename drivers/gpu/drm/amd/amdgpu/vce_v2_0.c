@@ -357,12 +357,11 @@ static void vce_v2_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
 /* Exception for ECPU, IH, SEM, SYS blocks needs to be turned on/off by SW */
 	if (gated) {
 		tmp |= 0xe10000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
 	} else {
 		tmp |= 0xe1;
 		tmp &= ~0xe10000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
 	}
+	WREG32(mmVCE_CLOCK_GATING_B, tmp);
 
 	orig = tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
 	tmp &= ~0x1fe000;
