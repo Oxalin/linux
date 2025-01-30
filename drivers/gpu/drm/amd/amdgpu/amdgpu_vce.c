@@ -41,6 +41,11 @@
 #define VCE_IDLE_TIMEOUT	msecs_to_jiffies(1000)
 
 /* Firmware Names */
+#ifdef CONFIG_DRM_AMDGPU_SI
+#define FIRMWARE_PITCAIRN	"amdgpu/pitcairn_vce.bin"
+#define FIRMWARE_TAHITI	"amdgpu/tahiti_vce.bin"
+#define FIRMWARE_VERDE	"amdgpu/verde_vce.bin"
+#endif
 #ifdef CONFIG_DRM_AMDGPU_CIK
 #define FIRMWARE_BONAIRE	"amdgpu/bonaire_vce.bin"
 #define FIRMWARE_KABINI	"amdgpu/kabini_vce.bin"
@@ -61,6 +66,11 @@
 #define FIRMWARE_VEGA12		"amdgpu/vega12_vce.bin"
 #define FIRMWARE_VEGA20		"amdgpu/vega20_vce.bin"
 
+#ifdef CONFIG_DRM_AMDGPU_SI
+MODULE_FIRMWARE(FIRMWARE_PITCAIRN);
+MODULE_FIRMWARE(FIRMWARE_TAHITI);
+MODULE_FIRMWARE(FIRMWARE_VERDE);
+#endif
 #ifdef CONFIG_DRM_AMDGPU_CIK
 MODULE_FIRMWARE(FIRMWARE_BONAIRE);
 MODULE_FIRMWARE(FIRMWARE_KABINI);
@@ -103,6 +113,17 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 	int i, r;
 
 	switch (adev->asic_type) {
+#ifdef CONFIG_DRM_AMDGPU_SI
+	case CHIP_PITCAIRN:
+		fw_name = FIRMWARE_PITCAIRN;
+		break;
+	case CHIP_TAHITI:
+		fw_name = FIRMWARE_TAHITI;
+		break;
+	case CHIP_VERDE:
+		fw_name = FIRMWARE_VERDE;
+		break;
+#endif
 #ifdef CONFIG_DRM_AMDGPU_CIK
 	case CHIP_BONAIRE:
 		fw_name = FIRMWARE_BONAIRE;
