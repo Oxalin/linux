@@ -1,4 +1,5 @@
 /*
+ * VCE_1_0 Register documentation
  *
  * Copyright (C) 2016 Advanced Micro Devices, Inc.
  *

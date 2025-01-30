@@ -27,6 +27,18 @@
 #include "si.h"
 #include "sid.h"
 
+#include "bif/bif_3_0_d.h"
+#include "bif/bif_3_0_sh_mask.h"
+
+#include "gca/gfx_6_0_d.h"
+#include "gca/gfx_6_0_sh_mask.h"
+
+#include "gmc/gmc_6_0_d.h"
+#include "gmc/gmc_6_0_sh_mask.h"
+
+#include "oss/oss_1_0_d.h"
+#include "oss/oss_1_0_sh_mask.h"
+
 const u32 sdma_offsets[SDMA_MAX_INSTANCE] =
 {
 	DMA0_REGISTER_OFFSET,
@@ -545,7 +557,7 @@ static bool si_dma_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 
-	u32 tmp = RREG32(SRBM_STATUS2);
+	u32 tmp = RREG32(mmSRBM_STATUS2);
 
 	if (tmp & (DMA_BUSY_MASK | DMA1_BUSY_MASK))
 	    return false;

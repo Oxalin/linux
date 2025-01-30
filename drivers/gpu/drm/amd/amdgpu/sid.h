@@ -61,7 +61,6 @@
 /* CG IND registers are accessed via SMC indirect space + SMC_CG_IND_START */
 #define SMC_CG_IND_START                    0xc0030000
 #define SMC_CG_IND_END                      0xc0040000
-
 #define	CG_CGTT_LOCAL_0				0x400
 #define	CG_CGTT_LOCAL_1				0x401
 
@@ -330,6 +329,7 @@
 #       define DMIF_BUFFERS_ALLOCATED(x)                  ((x) << 0)
 #       define DMIF_BUFFERS_ALLOCATED_COMPLETED           (1 << 4)
 
+/*
 #define	SRBM_STATUS				        0x394
 #define		GRBM_RQ_PENDING 			(1 << 5)
 #define		VMC_BUSY 				(1 << 8)
@@ -339,7 +339,8 @@
 #define		MCD_BUSY 				(1 << 12)
 #define		SEM_BUSY 				(1 << 14)
 #define		IH_BUSY 				(1 << 17)
-
+*/
+/*
 #define	SRBM_SOFT_RESET				        0x398
 #define		SOFT_RESET_BIF				(1 << 1)
 #define		SOFT_RESET_DC				(1 << 5)
@@ -355,17 +356,20 @@
 #define		SOFT_RESET_TST				(1 << 21)
 #define		SOFT_RESET_REGBB			(1 << 22)
 #define		SOFT_RESET_ORB				(1 << 23)
+*/
 
 #define	CC_SYS_RB_BACKEND_DISABLE			0x3A0
 #define	GC_USER_SYS_RB_BACKEND_DISABLE			0x3A1
-
+/*
 #define SRBM_READ_ERROR					0x3A6
 #define SRBM_INT_CNTL					0x3A8
 #define SRBM_INT_ACK					0x3AA
-
+*/
+/*
 #define	SRBM_STATUS2				        0x3B1
 #define		DMA_BUSY 				(1 << 5)
 #define		DMA1_BUSY 				(1 << 6)
+*/
 
 #define VM_L2_CNTL					0x500
 #define		ENABLE_L2_CACHE					(1 << 0)
@@ -1941,17 +1945,18 @@
 #define	DMA_PACKET_POLL_REG_MEM				  0xe
 #define	DMA_PACKET_NOP					  0xf
 
-#define VCE_STATUS					0x20004
-#define VCE_VCPU_CNTL					0x20014
-#define		VCE_CLK_EN				(1 << 0)
-#define VCE_VCPU_CACHE_OFFSET0				0x20024
-#define VCE_VCPU_CACHE_SIZE0				0x20028
-#define VCE_VCPU_CACHE_OFFSET1				0x2002c
-#define VCE_VCPU_CACHE_SIZE1				0x20030
-#define VCE_VCPU_CACHE_OFFSET2				0x20034
-#define VCE_VCPU_CACHE_SIZE2				0x20038
-#define VCE_SOFT_RESET					0x20120
-#define 	VCE_ECPU_SOFT_RESET			(1 << 0)
+// #define VCE_STATUS					0x20004
+// #define VCE_VCPU_CNTL					0x20014
+// #define		VCE_CLK_EN				(1 << 0)
+// #define VCE_VCPU_CACHE_OFFSET0				0x20024
+// #define VCE_VCPU_CACHE_SIZE0				0x20028
+// #define VCE_VCPU_CACHE_OFFSET1				0x2002c
+// #define VCE_VCPU_CACHE_SIZE1				0x20030
+// #define VCE_VCPU_CACHE_OFFSET2				0x20034
+// #define VCE_VCPU_CACHE_SIZE2				0x20038
+// #define VCE_VCPU_SCRATCH7				0x200dc
+// #define VCE_SOFT_RESET					0x20120
+// #define 	VCE_ECPU_SOFT_RESET			(1 << 0)
 #define 	VCE_FME_SOFT_RESET			(1 << 2)
 #define VCE_RB_BASE_LO2					0x2016c
 #define VCE_RB_BASE_HI2					0x20170
@@ -1963,6 +1968,7 @@
 #define VCE_RB_SIZE					0x20188
 #define VCE_RB_RPTR					0x2018c
 #define VCE_RB_WPTR					0x20190
+
 #define VCE_CLOCK_GATING_A				0x202f8
 #define VCE_CLOCK_GATING_B				0x202fc
 #define VCE_UENC_CLOCK_GATING				0x205bc
@@ -1971,6 +1977,7 @@
 #	define VCE_FW_REG_STATUS_BUSY			(1 << 0)
 #	define VCE_FW_REG_STATUS_PASS			(1 << 3)
 #	define VCE_FW_REG_STATUS_DONE			(1 << 11)
+
 #define VCE_LMI_FW_START_KEYSEL				0x20e18
 #define VCE_LMI_FW_PERIODIC_CTRL			0x20e20
 #define VCE_LMI_CTRL2					0x20e74
