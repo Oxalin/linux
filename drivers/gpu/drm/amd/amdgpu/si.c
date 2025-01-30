@@ -35,7 +35,6 @@
 #include "amdgpu_vce.h"
 #include "atom.h"
 #include "amd_pcie.h"
-#include "si_dpm.h"
 #include "si.h"
 #include "sid.h"
 #include "gmc_v6_0.h"
@@ -43,15 +42,13 @@
 #include "dce_v6_0.h"
 #include "gfx_v6_0.h"
 #include "si_dma.h"
-#include "uvd_v3_1.h"
-#include "amdgpu_vkms.h"
-#include "oss/oss_1_0_d.h"
-#include "oss/oss_1_0_sh_mask.h"
+#include "uvd_v3_1.h" // ARUBA, TAHITI should be 3.2
+#include "si_dpm.h"
+#include "uvd/uvd_4_0_d.h" // VERDE, PITCAIRN, OLAND
 
 #include "dce/dce_6_0_d.h"
 #include "dce/dce_6_0_sh_mask.h"
 
-#include "uvd/uvd_4_0_d.h"
 #include "bif/bif_3_0_d.h"
 #include "bif/bif_3_0_sh_mask.h"
 
@@ -60,7 +57,10 @@
 
 #include "gmc/gmc_6_0_d.h"
 #include "gmc/gmc_6_0_sh_mask.h"
+#include "oss/oss_1_0_d.h"
+#include "oss/oss_1_0_sh_mask.h"
 #include "amdgpu_dm.h"
+#include "amdgpu_vkms.h"
 
 static const u32 tahiti_golden_registers[] =
 {
