@@ -655,6 +655,7 @@ void amdgpu_debugfs_ring_init(struct amdgpu_device *adev,
  */
 int amdgpu_ring_test_helper(struct amdgpu_ring *ring)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_device *adev = ring->adev;
 	int r;
 
@@ -662,12 +663,15 @@ int amdgpu_ring_test_helper(struct amdgpu_ring *ring)
 	if (r)
 		DRM_DEV_ERROR(adev->dev, "ring %s test failed (%d)\n",
 			      ring->name, r);
-	else
-		DRM_DEV_DEBUG(adev->dev, "ring test on %s succeeded\n",
+	else {
+//		DRM_DEV_DEBUG(adev->dev, "ring test on %s succeeded\n",
+		DRM_INFO("ring test on %s succeeded\n",
 			      ring->name);
+	}
 
 	ring->sched.ready = !r;
 
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 

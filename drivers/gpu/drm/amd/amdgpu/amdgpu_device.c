@@ -2722,7 +2722,7 @@ static int amdgpu_device_ip_early_init(struct amdgpu_device *adev)
 
 static int amdgpu_device_ip_hw_init_phase1(struct amdgpu_device *adev)
 {
-	int i, r;
+	int i, r, error = 0;
 
 	for (i = 0; i < adev->num_ip_blocks; i++) {
 		if (!adev->ip_blocks[i].status.sw)
@@ -2739,18 +2739,22 @@ static int amdgpu_device_ip_hw_init_phase1(struct amdgpu_device *adev)
 			if (r) {
 				DRM_ERROR("hw_init of IP block <%s> failed %d\n",
 					  adev->ip_blocks[i].version->funcs->name, r);
-				return r;
+				error = r;
 			}
-			adev->ip_blocks[i].status.hw = true;
+			else {
+				DRM_INFO("hw_init of IP block <%s> succeed %d\n",
+					  adev->ip_blocks[i].version->funcs->name, r);
+				adev->ip_blocks[i].status.hw = true;
+			}
 		}
 	}
 
-	return 0;
+	return error;
 }
 
 static int amdgpu_device_ip_hw_init_phase2(struct amdgpu_device *adev)
 {
-	int i, r;
+	int i, r, error = 0;
 
 	for (i = 0; i < adev->num_ip_blocks; i++) {
 		if (!adev->ip_blocks[i].status.sw)
@@ -2764,12 +2768,16 @@ static int amdgpu_device_ip_hw_init_phase2(struct amdgpu_device *adev)
 		if (r) {
 			DRM_ERROR("hw_init of IP block <%s> failed %d\n",
 				  adev->ip_blocks[i].version->funcs->name, r);
-			return r;
+			error = r;
 		}
-		adev->ip_blocks[i].status.hw = true;
+		else {
+			DRM_INFO("hw_init of IP block <%s> succeed %d\n",
+					adev->ip_blocks[i].version->funcs->name, r);
+			adev->ip_blocks[i].status.hw = true;
+		}
 	}
 
-	return 0;
+	return error;
 }
 
 static int amdgpu_device_fw_loading(struct amdgpu_device *adev)
@@ -4482,6 +4490,7 @@ fence_driver_init:
 	if (r) {
 		dev_err(adev->dev, "amdgpu_device_ip_init failed\n");
 		amdgpu_vf_error_put(adev, AMDGIM_ERROR_VF_AMDGPU_INIT_FAIL, 0, 0);
+		DRM_INFO("Stepping over to release_ras_con\n");
 		goto release_ras_con;
 	}
 
@@ -4656,7 +4665,7 @@ static void amdgpu_device_unmap_mmio(struct amdgpu_device *adev)
  */
 void amdgpu_device_fini_hw(struct amdgpu_device *adev)
 {
-	dev_info(adev->dev, "amdgpu: finishing device.\n");
+	dev_info(adev->dev, "finishing device.\n");
 	flush_delayed_work(&adev->delayed_init_work);
 
 	if (adev->mman.initialized)
