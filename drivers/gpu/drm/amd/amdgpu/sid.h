@@ -1958,34 +1958,35 @@
 // #define VCE_SOFT_RESET					0x20120
 // #define 	VCE_ECPU_SOFT_RESET			(1 << 0)
 #define 	VCE_FME_SOFT_RESET			(1 << 2)
-#define VCE_RB_BASE_LO2					0x2016c
-#define VCE_RB_BASE_HI2					0x20170
-#define VCE_RB_SIZE2					0x20174
-#define VCE_RB_RPTR2					0x20178
-#define VCE_RB_WPTR2					0x2017c
-#define VCE_RB_BASE_LO					0x20180
-#define VCE_RB_BASE_HI					0x20184
-#define VCE_RB_SIZE					0x20188
-#define VCE_RB_RPTR					0x2018c
-#define VCE_RB_WPTR					0x20190
+// #define VCE_RB_BASE_LO2					0x2016c
+// #define VCE_RB_BASE_HI2					0x20170
+// #define VCE_RB_SIZE2					0x20174
+// #define VCE_RB_RPTR2					0x20178
+// #define VCE_RB_WPTR2					0x2017c
+// #define VCE_RB_BASE_LO					0x20180
+// #define VCE_RB_BASE_HI					0x20184
+// #define VCE_RB_SIZE					0x20188
+// #define VCE_RB_RPTR					0x2018c
+// #define VCE_RB_WPTR					0x20190
 
-#define VCE_CLOCK_GATING_A				0x202f8
-#define VCE_CLOCK_GATING_B				0x202fc
-#define VCE_UENC_CLOCK_GATING				0x205bc
-#define VCE_UENC_REG_CLOCK_GATING			0x205c0
-#define VCE_FW_REG_STATUS				0x20e10
-#	define VCE_FW_REG_STATUS_BUSY			(1 << 0)
-#	define VCE_FW_REG_STATUS_PASS			(1 << 3)
-#	define VCE_FW_REG_STATUS_DONE			(1 << 11)
+// #define VCE_CLOCK_GATING_A				0x202f8
+#	define CGC_DYN_CLOCK_MODE			(1 << 16)
+// #define VCE_CLOCK_GATING_B				0x202fc
+// #define VCE_UENC_CLOCK_GATING				0x205bc
+// #define VCE_UENC_REG_CLOCK_GATING			0x205c0
+// #define VCE_FW_REG_STATUS				0x20e10
+// #	define VCE_FW_REG_STATUS_BUSY			(1 << 0)
+// #	define VCE_FW_REG_STATUS_PASS			(1 << 3)
+// #	define VCE_FW_REG_STATUS_DONE			(1 << 11)
 
 #define VCE_LMI_FW_START_KEYSEL				0x20e18
 #define VCE_LMI_FW_PERIODIC_CTRL			0x20e20
-#define VCE_LMI_CTRL2					0x20e74
-#define VCE_LMI_CTRL					0x20e98
-#define VCE_LMI_VM_CTRL					0x20ea0
-#define VCE_LMI_SWAP_CNTL				0x20eb4
-#define VCE_LMI_SWAP_CNTL1				0x20eb8
-#define VCE_LMI_CACHE_CTRL				0x20ef4
+// #define VCE_LMI_CTRL2					0x20e74
+// #define VCE_LMI_CTRL					0x20e98
+// #define VCE_LMI_VM_CTRL					0x20ea0
+// #define VCE_LMI_SWAP_CNTL				0x20eb4
+// #define VCE_LMI_SWAP_CNTL1				0x20eb8
+// #define VCE_LMI_CACHE_CTRL				0x20ef4
 
 #define VCE_CMD_NO_OP					0x00000000
 #define VCE_CMD_END					0x00000001

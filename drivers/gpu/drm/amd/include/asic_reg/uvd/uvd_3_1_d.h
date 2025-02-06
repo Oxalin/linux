@@ -45,8 +45,10 @@
 #define mmUVD_CGC_UDEC_STATUS                                                   0x3d2d
 #define mmUVD_LMI_CTRL2                                                         0x3d3d
 #define mmUVD_MASTINT_EN                                                        0x3d40
+
 #define mmUVD_FW_START                                                          0x3d47
 #define mmUVD_FW_STATUS                                                         0x3d57
+
 #define mmUVD_LMI_ADDR_EXT                                                      0x3d65
 #define mmUVD_LMI_CTRL                                                          0x3d66
 #define mmUVD_LMI_STATUS                                                        0x3d67
@@ -59,12 +61,14 @@
 #define mmUVD_MPC_SET_MUXB1                                                     0x3d7c
 #define mmUVD_MPC_SET_MUX                                                       0x3d7d
 #define mmUVD_MPC_SET_ALU                                                       0x3d7e
+
 #define mmUVD_VCPU_CACHE_OFFSET0                                                0x3d82
 #define mmUVD_VCPU_CACHE_SIZE0                                                  0x3d83
 #define mmUVD_VCPU_CACHE_OFFSET1                                                0x3d84
 #define mmUVD_VCPU_CACHE_SIZE1                                                  0x3d85
 #define mmUVD_VCPU_CACHE_OFFSET2                                                0x3d86
 #define mmUVD_VCPU_CACHE_SIZE2                                                  0x3d87
+
 #define mmUVD_VCPU_CNTL                                                         0x3d98
 #define mmUVD_SOFT_RESET                                                        0x3da0
 #define mmUVD_RBC_IB_BASE                                                       0x3da1
@@ -82,17 +86,17 @@
 #define mmUVD_SEMA_SIGNAL_INCOMPLETE_TIMEOUT_CNTL                               0x3db3
 #define mmUVD_CONTEXT_ID                                                        0x3dbd
 #define mmUVD_RBC_IB_SIZE_UPDATE                                                0x3df1
-#define ixUVD_LMI_CACHE_CTRL                                                    0x9b
-#define ixUVD_LMI_SWAP_CNTL2                                                    0xaa
-#define ixUVD_LMI_ADDR_EXT2                                                     0xab
-#define ixUVD_CGC_MEM_CTRL                                                      0xc0
-#define ixUVD_CGC_CTRL2                                                         0xc1
+#define ixUVD_LMI_CACHE_CTRL                                                    0x009b
+#define ixUVD_LMI_SWAP_CNTL2                                                    0x00aa
+#define ixUVD_LMI_ADDR_EXT2                                                     0x00ab
+#define ixUVD_CGC_MEM_CTRL                                                      0x00c0
+#define ixUVD_CGC_CTRL2                                                         0x00c1
 #define mmUVD_PGFSM_CONFIG                                                      0x38f8
 #define mmUVD_PGFSM_READ_TILE1                                                  0x38fa
 #define mmUVD_PGFSM_READ_TILE2                                                  0x38fb
 #define mmUVD_POWER_STATUS                                                      0x38fc
-#define ixUVD_MIF_CURR_ADDR_CONFIG                                              0x48
-#define ixUVD_MIF_REF_ADDR_CONFIG                                               0x4c
-#define ixUVD_MIF_RECON1_ADDR_CONFIG                                            0x114
+#define ixUVD_MIF_CURR_ADDR_CONFIG                                              0x0048
+#define ixUVD_MIF_REF_ADDR_CONFIG                                               0x004c
+#define ixUVD_MIF_RECON1_ADDR_CONFIG                                            0x0114
 
 #endif /* UVD_3_1_D_H */

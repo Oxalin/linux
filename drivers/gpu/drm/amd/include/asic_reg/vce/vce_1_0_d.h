@@ -56,7 +56,7 @@
 #define mmVCE_SYS_INT_STATUS 0x8341
 #define mmVCE_SYS_INT_ACK 0x8341
 
-#define mmVCE_LMI_VCPU_CACHE_40BIT_BAR 0x8397
+#define mmVCE_LMI_VCPU_CACHE_40BIT_BAR 					0x8397
 #define mmVCE_LMI_CTRL2 0x839D
 #define mmVCE_LMI_SWAP_CNTL3                                                    0x839e
 #define mmVCE_LMI_CTRL 0x83A6

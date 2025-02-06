@@ -127,6 +127,8 @@
 #define mmGPIOPAD_STRENGTH 0x05E5
 #define mmGPIOPAD_SW_INT_STAT 0x05E4
 #define mmGPIOPAD_Y 0x05E9
+
+/* SMC IND accessor regs */
 #define mmSMC_IND_ACCESS_CNTL 0x008A
 #define mmSMC_IND_DATA_0 0x0081
 #define mmSMC_IND_DATA 0x0081
@@ -138,6 +140,7 @@
 #define mmSMC_IND_INDEX_1 0x0082
 #define mmSMC_IND_INDEX_2 0x0084
 #define mmSMC_IND_INDEX_3 0x0086
+
 #define mmSMC_MESSAGE_0 0x008B
 #define mmSMC_MESSAGE_1 0x008D
 #define mmSMC_MESSAGE_2 0x008F
