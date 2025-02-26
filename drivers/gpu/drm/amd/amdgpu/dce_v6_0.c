@@ -2968,7 +2968,51 @@ static void dce_v6_0_set_crtc_vline_interrupt_state(struct amdgpu_device *adev,
 						    int crtc,
 						    enum amdgpu_interrupt_state state)
 {
+	u32 reg_block, lb_interrupt_mask;
 
+	if (crtc >= adev->mode_info.num_crtc) {
+		DRM_DEBUG("invalid crtc %d\n", crtc);
+		return;
+	}
+
+	switch (crtc) {
+	case 0:
+		reg_block = CRTC0_REGISTER_OFFSET;
+		break;
+	case 1:
+		reg_block = CRTC1_REGISTER_OFFSET;
+		break;
+	case 2:
+		reg_block = CRTC2_REGISTER_OFFSET;
+		break;
+	case 3:
+		reg_block = CRTC3_REGISTER_OFFSET;
+		break;
+	case 4:
+		reg_block = CRTC4_REGISTER_OFFSET;
+		break;
+	case 5:
+		reg_block = CRTC5_REGISTER_OFFSET;
+		break;
+	default:
+		DRM_DEBUG("invalid crtc %d\n", crtc);
+		return;
+	}
+
+	switch (state) {
+	case AMDGPU_IRQ_STATE_DISABLE:
+		lb_interrupt_mask = RREG32(mmINT_MASK + reg_block);
+		lb_interrupt_mask &= ~VLINE_INT_MASK;
+		WREG32(mmINT_MASK + reg_block, lb_interrupt_mask);
+		break;
+	case AMDGPU_IRQ_STATE_ENABLE:
+		lb_interrupt_mask = RREG32(mmINT_MASK + reg_block);
+		lb_interrupt_mask |= VLINE_INT_MASK;
+		WREG32(mmINT_MASK + reg_block, lb_interrupt_mask);
+		break;
+	default:
+		break;
+	}
 }
 
 static int dce_v6_0_set_hpd_interrupt_state(struct amdgpu_device *adev,
