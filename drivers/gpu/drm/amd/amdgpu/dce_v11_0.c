@@ -486,27 +486,20 @@ static void dce_v11_0_set_vga_render_state(struct amdgpu_device *adev,
 
 static int dce_v11_0_get_num_crtc (struct amdgpu_device *adev)
 {
-	int num_crtc = 0;
-
 	switch (adev->asic_type) {
 	case CHIP_CARRIZO:
-		num_crtc = 3;
-		break;
+		return 3;
 	case CHIP_STONEY:
-		num_crtc = 2;
-		break;
+		return 2;
 	case CHIP_POLARIS10:
 	case CHIP_VEGAM:
-		num_crtc = 6;
-		break;
+		return 6;
 	case CHIP_POLARIS11:
 	case CHIP_POLARIS12:
-		num_crtc = 5;
-		break;
+		return 5;
 	default:
-		num_crtc = 0;
+		return 0;
 	}
-	return num_crtc;
 }
 
 void dce_v11_0_disable_dce(struct amdgpu_device *adev)

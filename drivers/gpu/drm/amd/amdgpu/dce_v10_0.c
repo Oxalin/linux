@@ -464,17 +464,13 @@ static void dce_v10_0_set_vga_render_state(struct amdgpu_device *adev,
 
 static int dce_v10_0_get_num_crtc(struct amdgpu_device *adev)
 {
-	int num_crtc = 0;
-
 	switch (adev->asic_type) {
 	case CHIP_FIJI:
 	case CHIP_TONGA:
-		num_crtc = 6;
-		break;
+		return 6;
 	default:
-		num_crtc = 0;
+		return 0;
 	}
-	return num_crtc;
 }
 
 void dce_v10_0_disable_dce(struct amdgpu_device *adev)
