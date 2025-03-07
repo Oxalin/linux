@@ -234,6 +234,24 @@
 #define mmIH_RB_WPTR_ADDR_HI 0x0F84
 #define mmIH_RB_WPTR_ADDR_LO 0x0F85
 #define mmIH_STATUS 0x0F88
+
+#define mmSDMA_GFX_RB_CNTL                                       0x3400
+#define mmSDMA_GFX_RB_BASE                                       0x3401
+#define mmSDMA_GFX_RB_RPTR                                       0x3402
+#define mmSDMA_GFX_RB_WPTR                                       0x3403
+#define mmSDMA_GFX_RB_RPTR_ADDR_HI                               0x3407
+#define mmSDMA_GFX_RB_RPTR_ADDR_LO                               0x3408
+#define mmSDMA_GFX_IB_CNTL                                       0x3409
+#define mmSDMA_GFX_IB_RPTR                                       0x340a
+#define mmSDMA_CNTL                                          0x340b
+#define mmSDMA_STATUS_REG                                    0x340D
+#define mmSDMA_TILING_CONFIG  				  0x342E
+#define	mmSDMA_POWER_CNTL					0x342F
+#define	mmSDMA_CLK_CTRL					0x3430
+#define	mmSDMA_PG						0x3435
+#define	mmSDMA_PGFSM_CONFIG				0x3436
+#define	mmSDMA_PGFSM_WRITE					0x3437
+
 #define mmSEM_MAILBOX 0x0F9B
 #define mmSEM_MAILBOX_CLIENTCONFIG 0x0F9A
 #define mmSEM_MAILBOX_CONTROL 0x0F9C
@@ -268,8 +286,5 @@
 #define mmUVD_CONFIG 0x0F98
 #define mmVCE_CONFIG 0x0F94
 #define mmXDMA_MSTR_MEM_OVERFLOW_CNTL 0x03F8
-
-/* from the old sid.h */
-#define mmDMA_TILING_CONFIG 0x342E
 
 #endif
