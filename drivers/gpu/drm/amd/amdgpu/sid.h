@@ -45,13 +45,6 @@
 #define SI_MAX_TCC_MASK          	0xFFFF
 #define SI_MAX_CTLACKS_ASSERTION_WAIT   100
 
-/* SMC IND accessor regs */
-
-#define SMC_IND_ACCESS_CNTL                          0x8A
-#       define AUTO_INCREMENT_IND_0                  (1 << 0)
-#define SMC_MESSAGE_0                                0x8B
-#define SMC_RESP_0                                   0x8C
-
 /* CG IND registers are accessed via SMC indirect space + SMC_CG_IND_START */
 #define SMC_CG_IND_START                    0xc0030000
 #define SMC_CG_IND_END                      0xc0040000
@@ -77,18 +70,6 @@
 #define		DCCG_DISP2_SLOW_SELECT_MASK		(7 << 4)
 #define		DCCG_DISP2_SLOW_SELECT_SHIFT		4
 
-#define	CG_SPLL_SPREAD_SPECTRUM				0x188
-#define		SSEN					(1 << 0)
-#define		CLK_S(x)				((x) << 4)
-#define		CLK_S_MASK				(0xfff << 4)
-#define		CLK_S_SHIFT				4
-#define	CG_SPLL_SPREAD_SPECTRUM_2			0x189
-#define		CLK_V(x)				((x) << 0)
-#define		CLK_V_MASK				(0x3ffffff << 0)
-#define		CLK_V_SHIFT				0
-
-#define	CG_SPLL_AUTOSCALE_CNTL				0x18b
-#       define AUTOSCALE_ON_SS_CLEAR                    (1 << 9)
 
 /* discrete uvd clocks */
 #define	CG_UPLL_FUNC_CNTL				0x18d
@@ -118,168 +99,6 @@
 #	define RESET_ANTI_MUX_MASK			0x00000200
 #define	CG_UPLL_SPREAD_SPECTRUM				0x194
 #	define SSEN_MASK				0x00000001
-
-#define	MPLL_BYPASSCLK_SEL				0x197
-#	define MPLL_CLKOUT_SEL(x)			((x) << 8)
-#	define MPLL_CLKOUT_SEL_MASK			0xFF00
-
-#define	THM_CLK_CNTL					0x19b
-#	define CMON_CLK_SEL(x)				((x) << 0)
-#	define CMON_CLK_SEL_MASK			0xFF
-#	define TMON_CLK_SEL(x)				((x) << 8)
-#	define TMON_CLK_SEL_MASK			0xFF00
-#define	MISC_CLK_CNTL					0x19c
-#	define DEEP_SLEEP_CLK_SEL(x)			((x) << 0)
-#	define DEEP_SLEEP_CLK_SEL_MASK			0xFF
-#	define ZCLK_SEL(x)				((x) << 8)
-#	define ZCLK_SEL_MASK				0xFF00
-
-#define	CG_THERMAL_CTRL					0x1c0
-#define 	DPM_EVENT_SRC(x)			((x) << 0)
-#define 	DPM_EVENT_SRC_MASK			(7 << 0)
-#define		DIG_THERM_DPM(x)			((x) << 14)
-#define		DIG_THERM_DPM_MASK			0x003FC000
-#define		DIG_THERM_DPM_SHIFT			14
-#define	CG_THERMAL_STATUS				0x1c1
-#define		FDO_PWM_DUTY(x)				((x) << 9)
-#define		FDO_PWM_DUTY_MASK			(0xff << 9)
-#define		FDO_PWM_DUTY_SHIFT			9
-#define	CG_THERMAL_INT					0x1c2
-#define		DIG_THERM_INTH(x)			((x) << 8)
-#define		DIG_THERM_INTH_MASK			0x0000FF00
-#define		DIG_THERM_INTH_SHIFT			8
-#define		DIG_THERM_INTL(x)			((x) << 16)
-#define		DIG_THERM_INTL_MASK			0x00FF0000
-#define		DIG_THERM_INTL_SHIFT			16
-#define 	THERM_INT_MASK_HIGH			(1 << 24)
-#define 	THERM_INT_MASK_LOW			(1 << 25)
-
-#define	CG_MULT_THERMAL_CTRL					0x1c4
-#define		TEMP_SEL(x)					((x) << 20)
-#define		TEMP_SEL_MASK					(0xff << 20)
-#define		TEMP_SEL_SHIFT					20
-#define	CG_MULT_THERMAL_STATUS					0x1c5
-#define		ASIC_MAX_TEMP(x)				((x) << 0)
-#define		ASIC_MAX_TEMP_MASK				0x000001ff
-#define		ASIC_MAX_TEMP_SHIFT				0
-#define		CTF_TEMP(x)					((x) << 9)
-#define		CTF_TEMP_MASK					0x0003fe00
-#define		CTF_TEMP_SHIFT					9
-
-#define	CG_FDO_CTRL0					0x1d5
-#define		FDO_STATIC_DUTY(x)			((x) << 0)
-#define		FDO_STATIC_DUTY_MASK			0x000000FF
-#define		FDO_STATIC_DUTY_SHIFT			0
-#define	CG_FDO_CTRL1					0x1d6
-#define		FMAX_DUTY100(x)				((x) << 0)
-#define		FMAX_DUTY100_MASK			0x000000FF
-#define		FMAX_DUTY100_SHIFT			0
-#define	CG_FDO_CTRL2					0x1d7
-#define		TMIN(x)					((x) << 0)
-#define		TMIN_MASK				0x000000FF
-#define		TMIN_SHIFT				0
-#define		FDO_PWM_MODE(x)				((x) << 11)
-#define		FDO_PWM_MODE_MASK			(7 << 11)
-#define		FDO_PWM_MODE_SHIFT			11
-#define		TACH_PWM_RESP_RATE(x)			((x) << 25)
-#define		TACH_PWM_RESP_RATE_MASK			(0x7f << 25)
-#define		TACH_PWM_RESP_RATE_SHIFT		25
-
-#define CG_TACH_CTRL                                    0x1dc
-#       define EDGE_PER_REV(x)                          ((x) << 0)
-#       define EDGE_PER_REV_MASK                        (0x7 << 0)
-#       define EDGE_PER_REV_SHIFT                       0
-#       define TARGET_PERIOD(x)                         ((x) << 3)
-#       define TARGET_PERIOD_MASK                       0xfffffff8
-#       define TARGET_PERIOD_SHIFT                      3
-#define CG_TACH_STATUS                                  0x1dd
-#       define TACH_PERIOD(x)                           ((x) << 0)
-#       define TACH_PERIOD_MASK                         0xffffffff
-#       define TACH_PERIOD_SHIFT                        0
-
-#define GENERAL_PWRMGT                                  0x1e0
-#       define GLOBAL_PWRMGT_EN                         (1 << 0)
-#       define STATIC_PM_EN                             (1 << 1)
-#       define THERMAL_PROTECTION_DIS                   (1 << 2)
-#       define THERMAL_PROTECTION_TYPE                  (1 << 3)
-#       define SW_SMIO_INDEX(x)                         ((x) << 6)
-#       define SW_SMIO_INDEX_MASK                       (1 << 6)
-#       define SW_SMIO_INDEX_SHIFT                      6
-#       define VOLT_PWRMGT_EN                           (1 << 10)
-#       define DYN_SPREAD_SPECTRUM_EN                   (1 << 23)
-#define CG_TPC                                            0x1e1
-#define SCLK_PWRMGT_CNTL                                  0x1e2
-#       define SCLK_PWRMGT_OFF                            (1 << 0)
-#       define SCLK_LOW_D1                                (1 << 1)
-#       define FIR_RESET                                  (1 << 4)
-#       define FIR_FORCE_TREND_SEL                        (1 << 5)
-#       define FIR_TREND_MODE                             (1 << 6)
-#       define DYN_GFX_CLK_OFF_EN                         (1 << 7)
-#       define GFX_CLK_FORCE_ON                           (1 << 8)
-#       define GFX_CLK_REQUEST_OFF                        (1 << 9)
-#       define GFX_CLK_FORCE_OFF                          (1 << 10)
-#       define GFX_CLK_OFF_ACPI_D1                        (1 << 11)
-#       define GFX_CLK_OFF_ACPI_D2                        (1 << 12)
-#       define GFX_CLK_OFF_ACPI_D3                        (1 << 13)
-#       define DYN_LIGHT_SLEEP_EN                         (1 << 14)
-
-#define TARGET_AND_CURRENT_PROFILE_INDEX                  0x1e6
-#       define CURRENT_STATE_INDEX_MASK                   (0xf << 4)
-#       define CURRENT_STATE_INDEX_SHIFT                  4
-
-#define CG_FTV                                            0x1ef
-
-#define CG_FFCT_0                                         0x1f0
-#       define UTC_0(x)                                   ((x) << 0)
-#       define UTC_0_MASK                                 (0x3ff << 0)
-#       define DTC_0(x)                                   ((x) << 10)
-#       define DTC_0_MASK                                 (0x3ff << 10)
-
-#define CG_BSP                                          0x1ff
-#       define BSP(x)					((x) << 0)
-#       define BSP_MASK					(0xffff << 0)
-#       define BSU(x)					((x) << 16)
-#       define BSU_MASK					(0xf << 16)
-#define CG_AT                                           0x200
-#       define CG_R(x)					((x) << 0)
-#       define CG_R_MASK				(0xffff << 0)
-#       define CG_L(x)					((x) << 16)
-#       define CG_L_MASK				(0xffff << 16)
-
-#define CG_GIT                                          0x201
-#       define CG_GICST(x)                              ((x) << 0)
-#       define CG_GICST_MASK                            (0xffff << 0)
-#       define CG_GIPOT(x)                              ((x) << 16)
-#       define CG_GIPOT_MASK                            (0xffff << 16)
-
-#define CG_SSP                                            0x203
-#       define SST(x)                                     ((x) << 0)
-#       define SST_MASK                                   (0xffff << 0)
-#       define SSTU(x)                                    ((x) << 16)
-#       define SSTU_MASK                                  (0xf << 16)
-
-#define CG_DISPLAY_GAP_CNTL                               0x20a
-#       define DISP1_GAP(x)                               ((x) << 0)
-#       define DISP1_GAP_MASK                             (3 << 0)
-#       define DISP2_GAP(x)                               ((x) << 2)
-#       define DISP2_GAP_MASK                             (3 << 2)
-#       define VBI_TIMER_COUNT(x)                         ((x) << 4)
-#       define VBI_TIMER_COUNT_MASK                       (0x3fff << 4)
-#       define VBI_TIMER_UNIT(x)                          ((x) << 20)
-#       define VBI_TIMER_UNIT_MASK                        (7 << 20)
-#       define DISP1_GAP_MCHG(x)                          ((x) << 24)
-#       define DISP1_GAP_MCHG_MASK                        (3 << 24)
-#       define DISP2_GAP_MCHG(x)                          ((x) << 26)
-#       define DISP2_GAP_MCHG_MASK                        (3 << 26)
-
-#define	CG_ULV_CONTROL					0x21e
-#define	CG_ULV_PARAMETER				0x21f
-
-#define	SMC_SCRATCH0					0x221
-
-#define	CG_CAC_CTRL					0x22e
-#	define CAC_WINDOW(x)				((x) << 0)
-#	define CAC_WINDOW_MASK				0x00ffffff
 
 #define DMIF_ADDR_CONFIG  				0x2F5
 
@@ -321,10 +140,6 @@
 #define SRBM_READ_ERROR					0x3A6
 #define SRBM_INT_CNTL					0x3A8
 #define SRBM_INT_ACK					0x3AA
-
-#define	SRBM_STATUS2				        0x3B1
-#define		DMA_BUSY 				(1 << 5)
-#define		DMA1_BUSY 				(1 << 6)
 
 #define VM_L2_CNTL					0x500
 #define		ENABLE_L2_CACHE					(1 << 0)
@@ -809,9 +624,6 @@
 #       define DC_HPDx_RX_INT_TIMER(x)                    ((x) << 16)
 #       define DC_HPDx_EN                                 (1 << 28)
 
-#define DPG_PIPE_STUTTER_CONTROL                          0x1B35
-#       define STUTTER_ENABLE                             (1 << 0)
-
 /* 0x6e98, 0x7a98, 0x10698, 0x11298, 0x11e98, 0x12a98 */
 #define CRTC_STATUS_FRAME_COUNT                         0x1BA6
 
@@ -923,24 +735,6 @@
 
 #define	SQC_CACHES					0x2302
 
-#define SQ_POWER_THROTTLE                               0x2396
-#define		MIN_POWER(x)				((x) << 0)
-#define		MIN_POWER_MASK				(0x3fff << 0)
-#define		MIN_POWER_SHIFT				0
-#define		MAX_POWER(x)				((x) << 16)
-#define		MAX_POWER_MASK				(0x3fff << 16)
-#define		MAX_POWER_SHIFT				0
-#define SQ_POWER_THROTTLE2                              0x2397
-#define		MAX_POWER_DELTA(x)			((x) << 0)
-#define		MAX_POWER_DELTA_MASK			(0x3fff << 0)
-#define		MAX_POWER_DELTA_SHIFT			0
-#define		STI_SIZE(x)				((x) << 16)
-#define		STI_SIZE_MASK				(0x3ff << 16)
-#define		STI_SIZE_SHIFT				16
-#define		LTI_RATIO(x)				((x) << 27)
-#define		LTI_RATIO_MASK				(0xf << 27)
-#define		LTI_RATIO_SHIFT				27
-
 #define	SX_DEBUG_1					0x2418
 
 #define	SPI_STATIC_THREAD_MGMT_1			0x2438
@@ -974,8 +768,6 @@
 #define	CB_PERFCOUNTER2_SELECT1				0x268D
 #define	CB_PERFCOUNTER3_SELECT0				0x268E
 #define	CB_PERFCOUNTER3_SELECT1				0x268F
-
-#define	CB_CGTT_SCLK_CTRL				0x2698
 
 #define	TCP_CHAN_STEER_LO				0x2B03
 #define	TCP_CHAN_STEER_HI				0x2B94
