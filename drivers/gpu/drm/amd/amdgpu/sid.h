@@ -1706,9 +1706,6 @@
 
 #define VERDE_NUM_CRTC 6
 #define	BLACKOUT_MODE_MASK			0x00000007
-#define	VGA_RENDER_CONTROL			0xC0
-#define R_000300_VGA_RENDER_CONTROL             0xC0
-#define C_000300_VGA_VSTATUS_CNTL               0xFFFCFFFF
 #define EVERGREEN_CRTC_STATUS                   0x1BA3
 #define EVERGREEN_CRTC_V_BLANK                  (1 << 0)
 #define EVERGREEN_CRTC_STATUS_POSITION          0x1BA4
@@ -1849,10 +1846,6 @@
 #       define EVERGREEN_CURSOR_DISABLE_MULTIPLE_UPDATE (1 << 24)
 
 #define	BLACKOUT_MODE_MASK			0x00000007
-#define	VGA_RENDER_CONTROL			0xC0
-#define R_000300_VGA_RENDER_CONTROL             0xC0
-#define C_000300_VGA_VSTATUS_CNTL               0xFFFCFFFF
-#define EVERGREEN_CRTC_STATUS                   0x1BA3
 #define EVERGREEN_CRTC_V_BLANK                  (1 << 0)
 #define EVERGREEN_CRTC_STATUS_POSITION          0x1BA4
 /* CRTC blocks at 0x6df0, 0x79f0, 0x105f0, 0x111f0, 0x11df0, 0x129f0 */

@@ -217,9 +217,13 @@ static void gmc_v6_0_vram_gtt_location(struct amdgpu_device *adev,
 
 static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 {
-	int i, j;
 	struct amdgpu_ip_block *ip_block;
+	u32 tmp;
+	int i, j;
 
+	ip_block = amdgpu_device_ip_get_ip_block(adev, AMD_IP_BLOCK_TYPE_GMC);
+	if (!ip_block)
+		return;
 
 	/* Initialize HDP */
 	for (i = 0, j = 0; i < 32; i++, j += 0x6) {
@@ -231,16 +235,10 @@ static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 	}
 	WREG32(mmHDP_REG_COHERENCY_FLUSH_CNTL, 0);
 
-	ip_block = amdgpu_device_ip_get_ip_block(adev, AMD_IP_BLOCK_TYPE_GMC);
-	if (!ip_block)
-		return;
-
 	if (gmc_v6_0_wait_for_idle(ip_block))
 		dev_warn(adev->dev, "Wait for MC idle timedout !\n");
 
 	if (adev->mode_info.num_crtc) {
-		u32 tmp;
-
 		/* Lockout access through VGA aperture*/
 		tmp = RREG32(mmVGA_HDP_CONTROL);
 		tmp |= VGA_HDP_CONTROL__VGA_MEMORY_DISABLE_MASK;
@@ -248,7 +246,7 @@ static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 
 		/* disable VGA render */
 		tmp = RREG32(mmVGA_RENDER_CONTROL);
-		tmp &= ~VGA_VSTATUS_CNTL;
+		tmp &= VGA_RENDER_CONTROL__VGA_VSTATUS_CNTL_MASK;
 		WREG32(mmVGA_RENDER_CONTROL, tmp);
 	}
 	/* Update configuration */
@@ -834,9 +832,17 @@ static int gmc_v6_0_sw_init(struct amdgpu_ip_block *ip_block)
 	if (r)
 		return r;
 
+	/* Adjust VM size here.
+	 * Currently set to 4GB ((1 << 20) 4k pages).
+	 * Max GPUVM size for cayman and SI is 40 bits.
+	 */
 	amdgpu_vm_adjust_size(adev, 64, 9, 1, 40);
 
-	adev->gmc.mc_mask = 0xffffffffffULL;
+	/* Set the internal MC address mask
+	 * This is the max address of the GPU's
+	 * internal address space.
+	 */
+	adev->gmc.mc_mask = 0xffffffffffULL; /* 40 bit MC */
 
 	r = dma_set_mask_and_coherent(adev->dev, DMA_BIT_MASK(40));
 	if (r) {
@@ -857,6 +863,7 @@ static int gmc_v6_0_sw_init(struct amdgpu_ip_block *ip_block)
 
 	amdgpu_gmc_get_vbios_allocations(adev);
 
+	/* Memory manager */
 	r = amdgpu_bo_init(adev);
 	if (r)
 		return r;
@@ -945,13 +952,12 @@ static int gmc_v6_0_suspend(struct amdgpu_ip_block *ip_block)
 static int gmc_v6_0_resume(struct amdgpu_ip_block *ip_block)
 {
 	int r;
-	struct amdgpu_device *adev = ip_block->adev;
 
 	r = gmc_v6_0_hw_init(ip_block);
 	if (r)
 		return r;
 
-	amdgpu_vmid_reset_all(adev);
+	amdgpu_vmid_reset_all(ip_block->adev);
 
 	return 0;
 }
@@ -959,7 +965,6 @@ static int gmc_v6_0_resume(struct amdgpu_ip_block *ip_block)
 static bool gmc_v6_0_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
-
 	u32 tmp = RREG32(mmSRBM_STATUS);
 
 	if (tmp & (SRBM_STATUS__MCB_BUSY_MASK | SRBM_STATUS__MCB_NON_DISPLAY_BUSY_MASK |
@@ -1019,6 +1024,7 @@ static int gmc_v6_0_soft_reset(struct amdgpu_ip_block *ip_block)
 		WREG32(mmSRBM_SOFT_RESET, tmp);
 		tmp = RREG32(mmSRBM_SOFT_RESET);
 
+		/* Wait a little for things to settle down */
 		udelay(50);
 
 		gmc_v6_0_mc_resume(adev);
@@ -1043,17 +1049,21 @@ static int gmc_v6_0_vm_fault_interrupt_state(struct amdgpu_device *adev,
 
 	switch (state) {
 	case AMDGPU_IRQ_STATE_DISABLE:
+		/* system context */
 		tmp = RREG32(mmVM_CONTEXT0_CNTL);
 		tmp &= ~bits;
 		WREG32(mmVM_CONTEXT0_CNTL, tmp);
+		/* VMs */
 		tmp = RREG32(mmVM_CONTEXT1_CNTL);
 		tmp &= ~bits;
 		WREG32(mmVM_CONTEXT1_CNTL, tmp);
 		break;
 	case AMDGPU_IRQ_STATE_ENABLE:
+		/* system context */
 		tmp = RREG32(mmVM_CONTEXT0_CNTL);
 		tmp |= bits;
 		WREG32(mmVM_CONTEXT0_CNTL, tmp);
+		/* VMs */
 		tmp = RREG32(mmVM_CONTEXT1_CNTL);
 		tmp |= bits;
 		WREG32(mmVM_CONTEXT1_CNTL, tmp);
@@ -1073,6 +1083,7 @@ static int gmc_v6_0_process_interrupt(struct amdgpu_device *adev,
 
 	addr = RREG32(mmVM_CONTEXT1_PROTECTION_FAULT_ADDR);
 	status = RREG32(mmVM_CONTEXT1_PROTECTION_FAULT_STATUS);
+	/* reset addr and status */
 	WREG32_P(mmVM_CONTEXT1_CNTL2, 1, ~1);
 
 	if (!addr && !status)
