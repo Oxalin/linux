@@ -1931,6 +1931,8 @@
 #define BUF_SWAP_32BIT       (2 << 16)
 
 
+#define GRPH_ENDIAN_NONE               0
+
 #define GRPH_RED_CROSSBAR(x)           (((x) & 0x3) << 4)
 #define GRPH_RED_SEL_R                 0
 #define GRPH_RED_SEL_G                 1
