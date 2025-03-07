@@ -46,8 +46,6 @@
 #define SI_MAX_CTLACKS_ASSERTION_WAIT   100
 
 /* SMC IND accessor regs */
-#define SMC_IND_INDEX_0                              0x80
-#define SMC_IND_DATA_0                               0x81
 
 #define SMC_IND_ACCESS_CNTL                          0x8A
 #       define AUTO_INCREMENT_IND_0                  (1 << 0)
@@ -78,34 +76,6 @@
 #define		DCCG_DISP2_SLOW_SELECT(x)		((x) << 4)
 #define		DCCG_DISP2_SLOW_SELECT_MASK		(7 << 4)
 #define		DCCG_DISP2_SLOW_SELECT_SHIFT		4
-
-#define	CG_SPLL_FUNC_CNTL				0x180
-#define		SPLL_RESET				(1 << 0)
-#define		SPLL_SLEEP				(1 << 1)
-#define		SPLL_BYPASS_EN				(1 << 3)
-#define		SPLL_REF_DIV(x)				((x) << 4)
-#define		SPLL_REF_DIV_MASK			(0x3f << 4)
-#define		SPLL_PDIV_A(x)				((x) << 20)
-#define		SPLL_PDIV_A_MASK			(0x7f << 20)
-#define		SPLL_PDIV_A_SHIFT			20
-#define	CG_SPLL_FUNC_CNTL_2				0x181
-#define		SCLK_MUX_SEL(x)				((x) << 0)
-#define		SCLK_MUX_SEL_MASK			(0x1ff << 0)
-#define		SPLL_CTLREQ_CHG				(1 << 23)
-#define		SCLK_MUX_UPDATE				(1 << 26)
-#define	CG_SPLL_FUNC_CNTL_3				0x182
-#define		SPLL_FB_DIV(x)				((x) << 0)
-#define		SPLL_FB_DIV_MASK			(0x3ffffff << 0)
-#define		SPLL_FB_DIV_SHIFT			0
-#define		SPLL_DITHEN				(1 << 28)
-#define	CG_SPLL_FUNC_CNTL_4				0x183
-
-#define	SPLL_STATUS					0x185
-#define		SPLL_CHG_STATUS				(1 << 1)
-#define	SPLL_CNTL_MODE					0x186
-#define		SPLL_SW_DIR_CONTROL			(1 << 0)
-#	define SPLL_REFCLK_SEL(x)			((x) << 26)
-#	define SPLL_REFCLK_SEL_MASK			(3 << 26)
 
 #define	CG_SPLL_SPREAD_SPECTRUM				0x188
 #define		SSEN					(1 << 0)
@@ -152,13 +122,6 @@
 #define	MPLL_BYPASSCLK_SEL				0x197
 #	define MPLL_CLKOUT_SEL(x)			((x) << 8)
 #	define MPLL_CLKOUT_SEL_MASK			0xFF00
-
-#define CG_CLKPIN_CNTL                                    0x198
-#       define XTALIN_DIVIDE                              (1 << 1)
-#       define BCLK_AS_XCLK                               (1 << 2)
-#define CG_CLKPIN_CNTL_2                                  0x199
-#       define FORCE_BIF_REFCLK_EN                        (1 << 3)
-#       define MUX_TCLK_TO_XCLK                           (1 << 8)
 
 #define	THM_CLK_CNTL					0x19b
 #	define CMON_CLK_SEL(x)				((x) << 0)
@@ -490,21 +453,6 @@
 #define MC_CITF_MISC_RD_CG           			0x992
 #define MC_CITF_MISC_WR_CG           			0x993
 #define MC_CITF_MISC_VM_CG           			0x994
-
-#define	MC_ARB_RAMCFG					0x9D8
-#define		NOOFBANK_SHIFT					0
-#define		NOOFBANK_MASK					0x00000003
-#define		NOOFRANK_SHIFT					2
-#define		NOOFRANK_MASK					0x00000004
-#define		NOOFROWS_SHIFT					3
-#define		NOOFROWS_MASK					0x00000038
-#define		NOOFCOLS_SHIFT					6
-#define		NOOFCOLS_MASK					0x000000C0
-#define		CHANSIZE_SHIFT					8
-#define		CHANSIZE_MASK					0x00000100
-#define		CHANSIZE_OVERRIDE				(1 << 11)
-#define		NOOFGROUPS_SHIFT				12
-#define		NOOFGROUPS_MASK					0x00001000
 
 #define	MC_ARB_DRAM_TIMING				0x9DD
 #define	MC_ARB_DRAM_TIMING2				0x9DE
@@ -876,37 +824,6 @@
 #define	GRBM_CNTL					0x2000
 #define		GRBM_READ_TIMEOUT(x)				((x) << 0)
 
-#define	GRBM_STATUS2					0x2002
-#define		RLC_RQ_PENDING 					(1 << 0)
-#define		RLC_BUSY 					(1 << 8)
-#define		TC_BUSY 					(1 << 9)
-
-#define	GRBM_STATUS					0x2004
-#define		CMDFIFO_AVAIL_MASK				0x0000000F
-#define		RING2_RQ_PENDING				(1 << 4)
-#define		SRBM_RQ_PENDING					(1 << 5)
-#define		RING1_RQ_PENDING				(1 << 6)
-#define		CF_RQ_PENDING					(1 << 7)
-#define		PF_RQ_PENDING					(1 << 8)
-#define		GDS_DMA_RQ_PENDING				(1 << 9)
-#define		GRBM_EE_BUSY					(1 << 10)
-#define		DB_CLEAN					(1 << 12)
-#define		CB_CLEAN					(1 << 13)
-#define		TA_BUSY 					(1 << 14)
-#define		GDS_BUSY 					(1 << 15)
-#define		VGT_BUSY					(1 << 17)
-#define		IA_BUSY_NO_DMA					(1 << 18)
-#define		IA_BUSY						(1 << 19)
-#define		SX_BUSY 					(1 << 20)
-#define		SPI_BUSY					(1 << 22)
-#define		BCI_BUSY					(1 << 23)
-#define		SC_BUSY 					(1 << 24)
-#define		PA_BUSY 					(1 << 25)
-#define		DB_BUSY 					(1 << 26)
-#define		CP_COHERENCY_BUSY      				(1 << 28)
-#define		CP_BUSY 					(1 << 29)
-#define		CB_BUSY 					(1 << 30)
-#define		GUI_ACTIVE					(1 << 31)
 #define	GRBM_STATUS_SE0					0x2005
 #define	GRBM_STATUS_SE1					0x2006
 #define		SE_DB_CLEAN					(1 << 1)
@@ -1049,31 +966,6 @@
 
 #define	TA_CNTL_AUX					0x2542
 
-#define CC_RB_BACKEND_DISABLE				0x263D
-#define		BACKEND_DISABLE(x)     			((x) << 16)
-#define GB_ADDR_CONFIG  				0x263E
-#define		NUM_PIPES(x)				((x) << 0)
-#define		NUM_PIPES_MASK				0x00000007
-#define		NUM_PIPES_SHIFT				0
-#define		PIPE_INTERLEAVE_SIZE(x)			((x) << 4)
-#define		PIPE_INTERLEAVE_SIZE_MASK		0x00000070
-#define		PIPE_INTERLEAVE_SIZE_SHIFT		4
-#define		NUM_SHADER_ENGINES(x)			((x) << 12)
-#define		NUM_SHADER_ENGINES_MASK			0x00003000
-#define		NUM_SHADER_ENGINES_SHIFT		12
-#define		SHADER_ENGINE_TILE_SIZE(x)     		((x) << 16)
-#define		SHADER_ENGINE_TILE_SIZE_MASK		0x00070000
-#define		SHADER_ENGINE_TILE_SIZE_SHIFT		16
-#define		NUM_GPUS(x)     			((x) << 20)
-#define		NUM_GPUS_MASK				0x00700000
-#define		NUM_GPUS_SHIFT				20
-#define		MULTI_GPU_TILE_SIZE(x)     		((x) << 24)
-#define		MULTI_GPU_TILE_SIZE_MASK		0x03000000
-#define		MULTI_GPU_TILE_SIZE_SHIFT		24
-#define		ROW_SIZE(x)             		((x) << 28)
-#define		ROW_SIZE_MASK				0x30000000
-#define		ROW_SIZE_SHIFT				28
-
 #define	CB_PERFCOUNTER0_SELECT0				0x2688
 #define	CB_PERFCOUNTER0_SELECT1				0x2689
 #define	CB_PERFCOUNTER1_SELECT0				0x268A
@@ -1160,146 +1052,14 @@
 #	define SE_YSEL(x)				((x) << 28)
 #	define SE_YSEL_MASK				(0x3 << 28)
 
-/* PIF PHY0 registers idx/data 0x8/0xc */
-#define PB0_PIF_CNTL                                      0x10
-#       define LS2_EXIT_TIME(x)                           ((x) << 17)
-#       define LS2_EXIT_TIME_MASK                         (0x7 << 17)
-#       define LS2_EXIT_TIME_SHIFT                        17
-#define PB0_PIF_PAIRING                                   0x11
-#       define MULTI_PIF                                  (1 << 25)
-#define PB0_PIF_PWRDOWN_0                                 0x12
-#       define PLL_POWER_STATE_IN_TXS2_0(x)               ((x) << 7)
-#       define PLL_POWER_STATE_IN_TXS2_0_MASK             (0x7 << 7)
-#       define PLL_POWER_STATE_IN_TXS2_0_SHIFT            7
-#       define PLL_POWER_STATE_IN_OFF_0(x)                ((x) << 10)
-#       define PLL_POWER_STATE_IN_OFF_0_MASK              (0x7 << 10)
-#       define PLL_POWER_STATE_IN_OFF_0_SHIFT             10
-#       define PLL_RAMP_UP_TIME_0(x)                      ((x) << 24)
-#       define PLL_RAMP_UP_TIME_0_MASK                    (0x7 << 24)
-#       define PLL_RAMP_UP_TIME_0_SHIFT                   24
-#define PB0_PIF_PWRDOWN_1                                 0x13
-#       define PLL_POWER_STATE_IN_TXS2_1(x)               ((x) << 7)
-#       define PLL_POWER_STATE_IN_TXS2_1_MASK             (0x7 << 7)
-#       define PLL_POWER_STATE_IN_TXS2_1_SHIFT            7
-#       define PLL_POWER_STATE_IN_OFF_1(x)                ((x) << 10)
-#       define PLL_POWER_STATE_IN_OFF_1_MASK              (0x7 << 10)
-#       define PLL_POWER_STATE_IN_OFF_1_SHIFT             10
-#       define PLL_RAMP_UP_TIME_1(x)                      ((x) << 24)
-#       define PLL_RAMP_UP_TIME_1_MASK                    (0x7 << 24)
-#       define PLL_RAMP_UP_TIME_1_SHIFT                   24
-
-#define PB0_PIF_PWRDOWN_2                                 0x17
-#       define PLL_POWER_STATE_IN_TXS2_2(x)               ((x) << 7)
-#       define PLL_POWER_STATE_IN_TXS2_2_MASK             (0x7 << 7)
-#       define PLL_POWER_STATE_IN_TXS2_2_SHIFT            7
-#       define PLL_POWER_STATE_IN_OFF_2(x)                ((x) << 10)
-#       define PLL_POWER_STATE_IN_OFF_2_MASK              (0x7 << 10)
-#       define PLL_POWER_STATE_IN_OFF_2_SHIFT             10
-#       define PLL_RAMP_UP_TIME_2(x)                      ((x) << 24)
-#       define PLL_RAMP_UP_TIME_2_MASK                    (0x7 << 24)
-#       define PLL_RAMP_UP_TIME_2_SHIFT                   24
-#define PB0_PIF_PWRDOWN_3                                 0x18
-#       define PLL_POWER_STATE_IN_TXS2_3(x)               ((x) << 7)
-#       define PLL_POWER_STATE_IN_TXS2_3_MASK             (0x7 << 7)
-#       define PLL_POWER_STATE_IN_TXS2_3_SHIFT            7
-#       define PLL_POWER_STATE_IN_OFF_3(x)                ((x) << 10)
-#       define PLL_POWER_STATE_IN_OFF_3_MASK              (0x7 << 10)
-#       define PLL_POWER_STATE_IN_OFF_3_SHIFT             10
-#       define PLL_RAMP_UP_TIME_3(x)                      ((x) << 24)
-#       define PLL_RAMP_UP_TIME_3_MASK                    (0x7 << 24)
-#       define PLL_RAMP_UP_TIME_3_SHIFT                   24
-/* PIF PHY1 registers idx/data 0x10/0x14 */
-#define PB1_PIF_CNTL                                      0x10
-#define PB1_PIF_PAIRING                                   0x11
-#define PB1_PIF_PWRDOWN_0                                 0x12
-#define PB1_PIF_PWRDOWN_1                                 0x13
-
-#define PB1_PIF_PWRDOWN_2                                 0x17
-#define PB1_PIF_PWRDOWN_3                                 0x18
-/* PCIE registers idx/data 0x30/0x34 */
-#define PCIE_CNTL2                                        0x1c /* PCIE */
-#       define SLV_MEM_LS_EN                              (1 << 16)
-#       define SLV_MEM_AGGRESSIVE_LS_EN                   (1 << 17)
-#       define MST_MEM_LS_EN                              (1 << 18)
-#       define REPLAY_MEM_LS_EN                           (1 << 19)
-#define PCIE_LC_STATUS1                                   0x28 /* PCIE */
-#       define LC_REVERSE_RCVR                            (1 << 0)
-#       define LC_REVERSE_XMIT                            (1 << 1)
-#       define LC_OPERATING_LINK_WIDTH_MASK               (0x7 << 2)
-#       define LC_OPERATING_LINK_WIDTH_SHIFT              2
-#       define LC_DETECTED_LINK_WIDTH_MASK                (0x7 << 5)
-#       define LC_DETECTED_LINK_WIDTH_SHIFT               5
-
-#define PCIE_P_CNTL                                       0x40 /* PCIE */
-#       define P_IGNORE_EDB_ERR                           (1 << 6)
-
 /* PCIE PORT registers idx/data 0x38/0x3c */
-#define PCIE_LC_CNTL                                      0xa0
-#       define LC_L0S_INACTIVITY(x)                       ((x) << 8)
-#       define LC_L0S_INACTIVITY_MASK                     (0xf << 8)
-#       define LC_L0S_INACTIVITY_SHIFT                    8
-#       define LC_L1_INACTIVITY(x)                        ((x) << 12)
-#       define LC_L1_INACTIVITY_MASK                      (0xf << 12)
-#       define LC_L1_INACTIVITY_SHIFT                     12
-#       define LC_PMI_TO_L1_DIS                           (1 << 16)
-#       define LC_ASPM_TO_L1_DIS                          (1 << 24)
-#define PCIE_LC_LINK_WIDTH_CNTL                           0xa2 /* PCIE_P */
-#       define LC_LINK_WIDTH_SHIFT                        0
-#       define LC_LINK_WIDTH_MASK                         0x7
+// #define PCIE_LC_LINK_WIDTH_CNTL                           0xa2 /* PCIE_P */
 #       define LC_LINK_WIDTH_X0                           0
 #       define LC_LINK_WIDTH_X1                           1
 #       define LC_LINK_WIDTH_X2                           2
 #       define LC_LINK_WIDTH_X4                           3
 #       define LC_LINK_WIDTH_X8                           4
 #       define LC_LINK_WIDTH_X16                          6
-#       define LC_LINK_WIDTH_RD_SHIFT                     4
-#       define LC_LINK_WIDTH_RD_MASK                      0x70
-#       define LC_RECONFIG_ARC_MISSING_ESCAPE             (1 << 7)
-#       define LC_RECONFIG_NOW                            (1 << 8)
-#       define LC_RENEGOTIATION_SUPPORT                   (1 << 9)
-#       define LC_RENEGOTIATE_EN                          (1 << 10)
-#       define LC_SHORT_RECONFIG_EN                       (1 << 11)
-#       define LC_UPCONFIGURE_SUPPORT                     (1 << 12)
-#       define LC_UPCONFIGURE_DIS                         (1 << 13)
-#       define LC_DYN_LANES_PWR_STATE(x)                  ((x) << 21)
-#       define LC_DYN_LANES_PWR_STATE_MASK                (0x3 << 21)
-#       define LC_DYN_LANES_PWR_STATE_SHIFT               21
-#define PCIE_LC_N_FTS_CNTL                                0xa3 /* PCIE_P */
-#       define LC_XMIT_N_FTS(x)                           ((x) << 0)
-#       define LC_XMIT_N_FTS_MASK                         (0xff << 0)
-#       define LC_XMIT_N_FTS_SHIFT                        0
-#       define LC_XMIT_N_FTS_OVERRIDE_EN                  (1 << 8)
-#       define LC_N_FTS_MASK                              (0xff << 24)
-#define PCIE_LC_SPEED_CNTL                                0xa4 /* PCIE_P */
-#       define LC_GEN2_EN_STRAP                           (1 << 0)
-#       define LC_GEN3_EN_STRAP                           (1 << 1)
-#       define LC_TARGET_LINK_SPEED_OVERRIDE_EN           (1 << 2)
-#       define LC_TARGET_LINK_SPEED_OVERRIDE_MASK         (0x3 << 3)
-#       define LC_TARGET_LINK_SPEED_OVERRIDE_SHIFT        3
-#       define LC_FORCE_EN_SW_SPEED_CHANGE                (1 << 5)
-#       define LC_FORCE_DIS_SW_SPEED_CHANGE               (1 << 6)
-#       define LC_FORCE_EN_HW_SPEED_CHANGE                (1 << 7)
-#       define LC_FORCE_DIS_HW_SPEED_CHANGE               (1 << 8)
-#       define LC_INITIATE_LINK_SPEED_CHANGE              (1 << 9)
-#       define LC_SPEED_CHANGE_ATTEMPTS_ALLOWED_MASK      (0x3 << 10)
-#       define LC_SPEED_CHANGE_ATTEMPTS_ALLOWED_SHIFT     10
-#       define LC_CURRENT_DATA_RATE_MASK                  (0x3 << 13) /* 0/1/2 = gen1/2/3 */
-#       define LC_CURRENT_DATA_RATE_SHIFT                 13
-#       define LC_CLR_FAILED_SPD_CHANGE_CNT               (1 << 16)
-#       define LC_OTHER_SIDE_EVER_SENT_GEN2               (1 << 18)
-#       define LC_OTHER_SIDE_SUPPORTS_GEN2                (1 << 19)
-#       define LC_OTHER_SIDE_EVER_SENT_GEN3               (1 << 20)
-#       define LC_OTHER_SIDE_SUPPORTS_GEN3                (1 << 21)
-
-#define PCIE_LC_CNTL2                                     0xb1
-#       define LC_ALLOW_PDWN_IN_L1                        (1 << 17)
-#       define LC_ALLOW_PDWN_IN_L23                       (1 << 18)
-
-#define PCIE_LC_CNTL3                                     0xb5 /* PCIE_P */
-#       define LC_GO_TO_RECOVERY                          (1 << 30)
-#define PCIE_LC_CNTL4                                     0xb6 /* PCIE_P */
-#       define LC_REDO_EQ                                 (1 << 5)
-#       define LC_SET_QUIESCE                             (1 << 13)
 
 /*
  * UVD
@@ -1556,8 +1316,8 @@
 #define	PACKET3_SWITCH_BUFFER				0x8B
 
 /* ASYNC DMA - first instance at 0xd000, second at 0xd800 */
-#define DMA0_REGISTER_OFFSET                              0x0 /* not a register */
-#define DMA1_REGISTER_OFFSET                              0x200 /* not a register */
+#define SDMA0_REGISTER_OFFSET                              0x0 /* not a register */
+#define SDMA1_REGISTER_OFFSET                              0x200 /* not a register */
 
 #define DMA_RB_CNTL                                       0x3400
 #       define DMA_RB_ENABLE                              (1 << 0)
@@ -1585,8 +1345,6 @@
 #       define DATA_SWAP_ENABLE                           (1 << 3)
 #       define FENCE_SWAP_ENABLE                          (1 << 4)
 #       define CTXEMPTY_INT_ENABLE                        (1 << 28)
-#define DMA_STATUS_REG                                    0x340d
-#       define DMA_IDLE                                   (1 << 0)
 #define DMA_TILING_CONFIG  				  0x342e
 
 #define	DMA_POWER_CNTL					0x342f
@@ -1957,6 +1715,9 @@
 #define GRPH_ALPHA_SEL_G               2
 #define GRPH_ALPHA_SEL_B               3
 
+
+/* CUR blocks at 0x6998, 0x7598, 0x10198, 0x10d98, 0x11998, 0x12598 */
+
 // #define CUR_CONTROL                           0x1a66
 	// #define CURSOR_EN                      (1 << 0)
 	// #define CURSOR_MODE(x)                 (((x) & 0x3) << 8)
@@ -2012,8 +1773,6 @@
 #       define INPUT_GAMMA_BYPASS                   1
 #       define INPUT_GAMMA_SRGB_24                  2
 #       define INPUT_GAMMA_XVYCC_222                3
-#define mmSRBM_SOFT_RESET__xxSOFT_RESET_MC_MASK 0x800
-#define mmSRBM_SOFT_RESET__xxSOFT_RESET_MC__SHIFT 0xb
 
 #define MC_SEQ_MISC0__MT__MASK	0xf0000000
 #define MC_SEQ_MISC0__MT__GDDR1  0x10000000
@@ -2029,8 +1788,6 @@
 #define PACKET3_SEM_SEL_SIGNAL	    (0x6 << 29)
 #define PACKET3_SEM_SEL_WAIT	    (0x7 << 29)
 
-#define CONFIG_CNTL	0x1509
-#define CC_DRM_ID_STRAPS	0X1559
 #define AMDGPU_PCIE_INDEX	0xc
 #define AMDGPU_PCIE_DATA	0xd
 
