@@ -1712,8 +1712,8 @@ static void gfx_v6_0_constants_init(struct amdgpu_device *adev)
 	WREG32(mmDMIF_ADDR_CONFIG, gb_addr_config);
 	WREG32(mmDMIF_ADDR_CALC, gb_addr_config);
 	WREG32(mmHDP_ADDR_CONFIG, gb_addr_config);
-	WREG32(mmSDMA_TILING_CONFIG + SDMA0_REGISTER_OFFSET, gb_addr_config);
-	WREG32(mmSDMA_TILING_CONFIG + SDMA1_REGISTER_OFFSET, gb_addr_config);
+	WREG32(mmDMA_TILING_CONFIG + DMA0_REGISTER_OFFSET, gb_addr_config);
+	WREG32(mmDMA_TILING_CONFIG + DMA1_REGISTER_OFFSET, gb_addr_config);
 
 #if 0
 	if (adev->has_uvd) {

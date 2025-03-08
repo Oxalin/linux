@@ -555,8 +555,9 @@
 #define	PACKET3_SWITCH_BUFFER				0x8B
 
 /* ASYNC DMA - first instance at 0xd000, second at 0xd800 */
-#define SDMA0_REGISTER_OFFSET                              0x0 /* not a register */
-#define SDMA1_REGISTER_OFFSET                              0x200 /* not a register */
+#define DMA0_REGISTER_OFFSET                              0x0 /* not a register */
+#define DMA1_REGISTER_OFFSET                              0x200 /* not a register */
+#define DMA_MAX_INSTANCE 2
 
 #define DMA_PACKET(cmd, b, t, s, n)	((((cmd) & 0xF) << 28) |	\
 					 (((b) & 0x1) << 26) |		\
@@ -804,10 +805,6 @@
 
 #define AMDGPU_PCIE_INDEX	0xc
 #define AMDGPU_PCIE_DATA	0xd
-
-#define DMA_SEM_INCOMPLETE_TIMER_CNTL                     0x3411
-#define DMA_SEM_WAIT_FAIL_TIMER_CNTL                      0x3412
-#define SDMA_MAX_INSTANCE 2
 
 #define PCIE_BUS_CLK    10000
 #define TCLK            (PCIE_BUS_CLK / 10)
