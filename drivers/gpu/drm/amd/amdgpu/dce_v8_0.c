@@ -3233,8 +3233,7 @@ static const struct amd_ip_funcs dce_v8_0_ip_funcs = {
 	.set_powergating_state = dce_v8_0_set_powergating_state,
 };
 
-static void
-dce_v8_0_encoder_mode_set(struct drm_encoder *encoder,
+static void dce_v8_0_encoder_mode_set(struct drm_encoder *encoder,
 			  struct drm_display_mode *mode,
 			  struct drm_display_mode *adjusted_mode)
 {
@@ -3330,8 +3329,7 @@ static void dce_v8_0_ext_commit(struct drm_encoder *encoder)
 
 }
 
-static void
-dce_v8_0_ext_mode_set(struct drm_encoder *encoder,
+static void dce_v8_0_ext_mode_set(struct drm_encoder *encoder,
 		      struct drm_display_mode *mode,
 		      struct drm_display_mode *adjusted_mode)
 {
@@ -3343,8 +3341,7 @@ static void dce_v8_0_ext_disable(struct drm_encoder *encoder)
 
 }
 
-static void
-dce_v8_0_ext_dpms(struct drm_encoder *encoder, int mode)
+static void dce_v8_0_ext_dpms(struct drm_encoder *encoder, int mode)
 {
 
 }
@@ -3407,7 +3404,6 @@ static void dce_v8_0_encoder_add(struct amdgpu_device *adev,
 			amdgpu_encoder->devices |= supported_device;
 			return;
 		}
-
 	}
 
 	/* add a new one */

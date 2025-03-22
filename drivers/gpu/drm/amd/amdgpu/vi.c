@@ -61,19 +61,27 @@
 
 #include "vid.h"
 #include "vi.h"
+
 #include "gmc_v8_0.h"
 #include "gmc_v7_0.h"
+
 #include "gfx_v8_0.h"
+
 #include "sdma_v2_4.h"
 #include "sdma_v3_0.h"
+
 #include "dce_v10_0.h"
 #include "dce_v11_0.h"
+
 #include "iceland_ih.h"
 #include "tonga_ih.h"
 #include "cz_ih.h"
+
 #include "uvd_v5_0.h"
 #include "uvd_v6_0.h"
+
 #include "vce_v3_0.h"
+
 #if defined(CONFIG_DRM_AMD_ACP)
 #include "amdgpu_acp.h"
 #endif
