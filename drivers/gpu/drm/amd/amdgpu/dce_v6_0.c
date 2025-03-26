@@ -3022,7 +3022,7 @@ static void dce_v6_0_set_crtc_vline_interrupt_state(struct amdgpu_device *adev,
 
 static int dce_v6_0_set_hpd_irq_state(struct amdgpu_device *adev,
 					    struct amdgpu_irq_src *src,
-					    unsigned hdp,
+					    unsigned hpd,
 					    enum amdgpu_interrupt_state state)
 {
 	u32 dc_hpd_int_cntl;
