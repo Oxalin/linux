@@ -2989,7 +2989,7 @@ static void dce_v8_0_set_crtc_vline_interrupt_state(struct amdgpu_device *adev,
 	}
 }
 
-static int dce_v8_0_set_hpd_interrupt_state(struct amdgpu_device *adev,
+static int dce_v8_0_set_hpd_irq_state(struct amdgpu_device *adev,
 					    struct amdgpu_irq_src *src,
 					    unsigned type,
 					    enum amdgpu_interrupt_state state)
@@ -3019,7 +3019,7 @@ static int dce_v8_0_set_hpd_interrupt_state(struct amdgpu_device *adev,
 	return 0;
 }
 
-static int dce_v8_0_set_crtc_interrupt_state(struct amdgpu_device *adev,
+static int dce_v8_0_set_crtc_irq_state(struct amdgpu_device *adev,
 					     struct amdgpu_irq_src *src,
 					     unsigned type,
 					     enum amdgpu_interrupt_state state)
@@ -3104,7 +3104,7 @@ static int dce_v8_0_crtc_irq(struct amdgpu_device *adev,
 	return 0;
 }
 
-static int dce_v8_0_set_pageflip_interrupt_state(struct amdgpu_device *adev,
+static int dce_v8_0_set_pageflip_irq_state(struct amdgpu_device *adev,
 						 struct amdgpu_irq_src *src,
 						 unsigned type,
 						 enum amdgpu_interrupt_state state)
@@ -3511,17 +3511,17 @@ static void dce_v8_0_set_display_funcs(struct amdgpu_device *adev)
 }
 
 static const struct amdgpu_irq_src_funcs dce_v8_0_crtc_irq_funcs = {
-	.set = dce_v8_0_set_crtc_interrupt_state,
+	.set = dce_v8_0_set_crtc_irq_state,
 	.process = dce_v8_0_crtc_irq,
 };
 
 static const struct amdgpu_irq_src_funcs dce_v8_0_pageflip_irq_funcs = {
-	.set = dce_v8_0_set_pageflip_interrupt_state,
+	.set = dce_v8_0_set_pageflip_irq_state,
 	.process = dce_v8_0_pageflip_irq,
 };
 
 static const struct amdgpu_irq_src_funcs dce_v8_0_hpd_irq_funcs = {
-	.set = dce_v8_0_set_hpd_interrupt_state,
+	.set = dce_v8_0_set_hpd_irq_state,
 	.process = dce_v8_0_hpd_irq,
 };
 
