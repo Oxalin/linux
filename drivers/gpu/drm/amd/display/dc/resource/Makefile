@@ -27,6 +27,22 @@
 #  DCE
 ###############################################################################
 
+RESOURCE_DCE60 = dce60_resource.o
+
+AMD_DAL_RESOURCE_DCE60 = $(addprefix $(AMDDALPATH)/dc/resource/dce60/,$(RESOURCE_DCE60))
+
+AMD_DISPLAY_FILES += $(AMD_DAL_RESOURCE_DCE60)
+
+###############################################################################
+
+RESOURCE_DCE80 = dce80_resource.o
+
+AMD_DAL_RESOURCE_DCE80 = $(addprefix $(AMDDALPATH)/dc/resource/dce80/,$(RESOURCE_DCE80))
+
+AMD_DISPLAY_FILES += $(AMD_DAL_RESOURCE_DCE80)
+
+###############################################################################
+
 RESOURCE_DCE100 = dce100_resource.o
 
 AMD_DAL_RESOURCE_DCE100 = $(addprefix $(AMDDALPATH)/dc/resource/dce100/,$(RESOURCE_DCE100))
@@ -56,14 +72,6 @@ RESOURCE_DCE120 = dce120_resource.o
 AMD_DAL_RESOURCE_DCE120 = $(addprefix $(AMDDALPATH)/dc/resource/dce120/,$(RESOURCE_DCE120))
 
 AMD_DISPLAY_FILES += $(AMD_DAL_RESOURCE_DCE120)
-
-###############################################################################
-
-RESOURCE_DCE80 = dce80_resource.o
-
-AMD_DAL_RESOURCE_DCE80 = $(addprefix $(AMDDALPATH)/dc/resource/dce80/,$(RESOURCE_DCE80))
-
-AMD_DISPLAY_FILES += $(AMD_DAL_RESOURCE_DCE80)
 
 ifdef CONFIG_DRM_AMD_DC_FP
 ###############################################################################
