@@ -421,8 +421,8 @@ typedef struct _COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS_V2
   USHORT  usFbDiv;		    //return Feedback value to be written to register
   UCHAR   ucPostDiv;      //return post div to be written to register
 }COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS_V2;
-#define COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS_PS_ALLOCATION   COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS
 
+#define COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS_PS_ALLOCATION   COMPUTE_MEMORY_ENGINE_PLL_PARAMETERS
 
 #define SET_CLOCK_FREQ_MASK                     0x00FFFFFF  //Clock change tables only take bit [23:0] as the requested clock value
 #define USE_NON_BUS_CLOCK_MASK                  0x01000000  //Applicable to both memory and engine clock change, when set, it uses another clock as the temporary clock (engine uses memory and vice versa)
@@ -3825,8 +3825,7 @@ typedef struct _ATOM_DPCD_INFO
 // note2: From RV770, the memory is more than 32bit addressable, so we will change 
 //        ucTableFormatRevision=1,ucTableContentRevision=4, the structure remains
 //        exactly same as 1.1 and 1.2 (1.3 is never in use), but ulStartAddrUsedByFirmware 
-//        (in offset to start of memory address) is KB aligned instead of byte aligend.
-/***********************************************************************************/	
+//        (in offset to start of memory address) is KB aligned instead of byte aligned.
 // Note3:
 /* If we change usReserved to "usFBUsedbyDrvInKB", then to VBIOS this usFBUsedbyDrvInKB is a predefined, unchanged constant across VGA or non VGA adapter,
 for CAIL, The size of FB access area is known, only thing missing is the Offset of FB Access area, so we can  have:
