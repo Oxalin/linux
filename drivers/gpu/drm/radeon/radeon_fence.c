@@ -798,50 +798,50 @@ void radeon_fence_note_sync(struct radeon_fence *fence, int dst_ring)
  * ready for use on the requested ring.
  *
  * @rdev: radeon device pointer
- * @ring: ring index to start the fence driver on
+ * @ring_idx: ring index to start the fence driver on
  *
  * Make the fence driver ready for processing (all asics).
  * Not all asics have all rings, so each asic will only
  * start the fence driver on the rings it has.
  * Returns 0 for success, errors for failure.
  */
-int radeon_fence_driver_start_ring(struct radeon_device *rdev, int ring)
+int radeon_fence_driver_start_ring(struct radeon_device *rdev, int ring_idx)
 {
 	uint64_t index;
 	int r;
-
-	radeon_scratch_free(rdev, rdev->fence_drv[ring].scratch_reg);
-	if (rdev->wb.use_event || !radeon_ring_supports_scratch_reg(rdev, &rdev->ring[ring])) {
-		rdev->fence_drv[ring].scratch_reg = 0;
-		if (ring != R600_RING_TYPE_UVD_INDEX) {
-			index = R600_WB_EVENT_OFFSET + ring * 4;
-			rdev->fence_drv[ring].cpu_addr = &rdev->wb.wb[index/4];
-			rdev->fence_drv[ring].gpu_addr = rdev->wb.gpu_addr +
+	radeon_scratch_free(rdev, rdev->fence_drv[ring_idx].scratch_reg);
+	if (rdev->wb.use_event || !radeon_ring_supports_scratch_reg(rdev, ring)) {
+		rdev->fence_drv[ring_idx].scratch_reg = 0;
+		if (ring_idx != R600_RING_TYPE_UVD_INDEX) {
+			index = R600_WB_EVENT_OFFSET + ring_idx * 4;
+			rdev->fence_drv[ring_idx].cpu_addr = &rdev->wb.wb[index/4];
+			rdev->fence_drv[ring_idx].gpu_addr = rdev->wb.gpu_addr +
 							 index;
 
 		} else {
 			/* put fence directly behind firmware */
 			index = ALIGN(rdev->uvd_fw->size, 8);
-			rdev->fence_drv[ring].cpu_addr = rdev->uvd.cpu_addr + index;
-			rdev->fence_drv[ring].gpu_addr = rdev->uvd.gpu_addr + index;
+			rdev->fence_drv[ring_idx].cpu_addr = rdev->uvd.cpu_addr + index;
+			rdev->fence_drv[ring_idx].gpu_addr = rdev->uvd.gpu_addr + index;
 		}
 
 	} else {
-		r = radeon_scratch_get(rdev, &rdev->fence_drv[ring].scratch_reg);
+		r = radeon_scratch_get(rdev, &rdev->fence_drv[ring_idx].scratch_reg);
 		if (r) {
 			dev_err(rdev->dev, "fence failed to get scratch register\n");
 			return r;
 		}
 		index = RADEON_WB_SCRATCH_OFFSET +
-			rdev->fence_drv[ring].scratch_reg -
+			rdev->fence_drv[ring_idx].scratch_reg -
 			rdev->scratch.reg_base;
-		rdev->fence_drv[ring].cpu_addr = &rdev->wb.wb[index/4];
-		rdev->fence_drv[ring].gpu_addr = rdev->wb.gpu_addr + index;
+		rdev->fence_drv[ring_idx].cpu_addr = &rdev->wb.wb[index/4];
+		rdev->fence_drv[ring_idx].gpu_addr = rdev->wb.gpu_addr + index;
 	}
-	radeon_fence_write(rdev, atomic64_read(&rdev->fence_drv[ring].last_seq), ring);
-	rdev->fence_drv[ring].initialized = true;
+	radeon_fence_write(rdev, atomic64_read(&rdev->fence_drv[ring_idx].last_seq), ring_idx);
+	rdev->fence_drv[ring_idx].initialized = true;
+
 	dev_info(rdev->dev, "fence driver on ring %d uses gpu addr 0x%016llx\n",
-		 ring, rdev->fence_drv[ring].gpu_addr);
+		 ring_idx, rdev->fence_drv[ring_idx].gpu_addr);
 	return 0;
 }
 
