@@ -760,8 +760,9 @@ int radeon_vce_ring_test(struct radeon_device *rdev, struct radeon_ring *ring)
 
 	r = radeon_ring_lock(rdev, ring, 16);
 	if (r) {
-		DRM_ERROR("radeon: vce failed to lock ring %d (%d).\n",
-			  ring->idx, r);
+		DRM_ERROR("radeon: vce failed to lock ring %s (%d).\n",
+			  ring->name, r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 	radeon_ring_write(ring, cpu_to_le32(VCE_CMD_END));
@@ -774,11 +775,11 @@ int radeon_vce_ring_test(struct radeon_device *rdev, struct radeon_ring *ring)
 	}
 
 	if (i < rdev->usec_timeout) {
-		DRM_INFO("ring test on %d succeeded in %d usecs\n",
-			 ring->idx, i);
+		DRM_INFO("ring test on %s succeeded in %d usecs\n",
+			 ring->name, i);
 	} else {
-		DRM_ERROR("radeon: ring %d test failed\n",
-			 ring->idx);
+		DRM_ERROR("radeon: ring %s test failed\n",
+			 ring->name);
 		r = -ETIMEDOUT;
 	}
 

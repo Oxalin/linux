@@ -427,8 +427,8 @@ int uvd_v1_0_ring_test(struct radeon_device *rdev, struct radeon_ring *ring)
 	WREG32(UVD_CONTEXT_ID, 0xCAFEDEAD);
 	r = radeon_ring_lock(rdev, ring, 3);
 	if (r) {
-		DRM_ERROR("radeon: cp failed to lock ring %d (%d).\n",
-			  ring->idx, r);
+		DRM_ERROR("radeon: cp failed to lock ring %s (%d).\n",
+			  ring->name, r);
 		return r;
 	}
 	radeon_ring_write(ring, PACKET0(UVD_CONTEXT_ID, 0));
@@ -442,11 +442,11 @@ int uvd_v1_0_ring_test(struct radeon_device *rdev, struct radeon_ring *ring)
 	}
 
 	if (i < rdev->usec_timeout) {
-		DRM_INFO("ring test on %d succeeded in %d usecs\n",
-			 ring->idx, i);
+		DRM_INFO("ring test on %s succeeded in %d usecs\n",
+			 ring->name, i);
 	} else {
-		DRM_ERROR("radeon: ring %d test failed (0x%08X)\n",
-			  ring->idx, tmp);
+		DRM_ERROR("radeon: ring %s test failed (0x%08X)\n",
+			  ring->name, tmp);
 		r = -EINVAL;
 	}
 	return r;
@@ -534,7 +534,7 @@ int uvd_v1_0_ib_test(struct radeon_device *rdev, struct radeon_ring *ring)
 		goto error;
 	}
 	r = 0;
-	DRM_INFO("ib test on ring %d succeeded\n",  ring->idx);
+	DRM_INFO("ib test on ring %s succeeded\n",  ring->name);
 error:
 	radeon_fence_unref(&fence);
 	radeon_set_uvd_clocks(rdev, 0, 0);

@@ -809,6 +809,8 @@ int radeon_fence_driver_start_ring(struct radeon_device *rdev, int ring_idx)
 {
 	uint64_t index;
 	int r;
+	struct radeon_ring *ring = &rdev->ring[ring_idx];
+
 	radeon_scratch_free(rdev, rdev->fence_drv[ring_idx].scratch_reg);
 	if (rdev->wb.use_event || !radeon_ring_supports_scratch_reg(rdev, ring)) {
 		rdev->fence_drv[ring_idx].scratch_reg = 0;
@@ -840,8 +842,8 @@ int radeon_fence_driver_start_ring(struct radeon_device *rdev, int ring_idx)
 	radeon_fence_write(rdev, atomic64_read(&rdev->fence_drv[ring_idx].last_seq), ring_idx);
 	rdev->fence_drv[ring_idx].initialized = true;
 
-	dev_info(rdev->dev, "fence driver on ring %d uses gpu addr 0x%016llx\n",
-		 ring_idx, rdev->fence_drv[ring_idx].gpu_addr);
+	dev_info(rdev->dev, "fence driver on ring %s uses gpu addr 0x%016llx\n",
+		 ring->name, rdev->fence_drv[ring_idx].gpu_addr);
 	return 0;
 }
 

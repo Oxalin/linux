@@ -247,7 +247,7 @@ int r600_dma_ring_test(struct radeon_device *rdev,
 
 	r = radeon_ring_lock(rdev, ring, 4);
 	if (r) {
-		DRM_ERROR("radeon: dma failed to lock ring %d (%d).\n", ring->idx, r);
+		DRM_ERROR("radeon: dma failed to lock ring %s (%d).\n", ring->name, r);
 		return r;
 	}
 	radeon_ring_write(ring, DMA_PACKET(DMA_PACKET_WRITE, 0, 0, 1));
@@ -264,10 +264,10 @@ int r600_dma_ring_test(struct radeon_device *rdev,
 	}
 
 	if (i < rdev->usec_timeout) {
-		DRM_INFO("ring test on %d succeeded in %d usecs\n", ring->idx, i);
+		DRM_INFO("ring test on %s succeeded in %d usecs\n", ring->name, i);
 	} else {
-		DRM_ERROR("radeon: ring %d test failed (0x%08X)\n",
-			  ring->idx, tmp);
+		DRM_ERROR("radeon: ring %s test failed (0x%08X)\n",
+			  ring->name, tmp);
 		r = -EINVAL;
 	}
 	return r;
