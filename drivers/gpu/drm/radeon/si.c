@@ -6439,6 +6439,7 @@ restart_ih:
 static void si_uvd_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring = &rdev->ring[R600_RING_TYPE_UVD_INDEX];
 
 	if (!rdev->has_uvd)
 		return;
@@ -6455,8 +6456,10 @@ static void si_uvd_init(struct radeon_device *rdev)
 		rdev->has_uvd = false;
 		return;
 	}
-	rdev->ring[R600_RING_TYPE_UVD_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_UVD_INDEX], 4096);
+
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "uvd");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void si_uvd_start(struct radeon_device *rdev)
@@ -6506,6 +6509,7 @@ static void si_uvd_resume(struct radeon_device *rdev)
 static void si_vce_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring;
 
 	if (!rdev->has_vce)
 		return;
@@ -6522,27 +6526,36 @@ static void si_vce_init(struct radeon_device *rdev)
 		rdev->has_vce = false;
 		return;
 	}
-	rdev->ring[TN_RING_TYPE_VCE1_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[TN_RING_TYPE_VCE1_INDEX], 4096);
-	rdev->ring[TN_RING_TYPE_VCE2_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[TN_RING_TYPE_VCE2_INDEX], 4096);
+
+	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "vce0");
+	r600_ring_init(rdev, ring, 4096);
+
+	ring = &rdev->ring[TN_RING_TYPE_VCE2_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "vce1");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void si_vce_start(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, similar to AMDGPU vce_v1_0_resume() + radeon_fence_driver_start_ring()", __func__);
 	int r;
 
-	if (!rdev->has_vce)
+	if (!rdev->has_vce) {
+		DRM_INFO("Out %s", __func__);
 		return;
+	}
 
 	r = radeon_vce_resume(rdev);
 	if (r) {
 		dev_err(rdev->dev, "failed VCE resume (%d).\n", r);
 		goto error;
 	}
-	r = vce_v1_0_resume(rdev);
+	r = vce_v1_0_mc_resume(rdev);
 	if (r) {
-		dev_err(rdev->dev, "failed VCE resume (%d).\n", r);
+		dev_err(rdev->dev, "failed VCE MC resume (%d).\n", r);
 		goto error;
 	}
 	r = radeon_fence_driver_start_ring(rdev, TN_RING_TYPE_VCE1_INDEX);
@@ -6867,22 +6880,27 @@ int si_init(struct radeon_device *rdev)
 
 	ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "gfx");
 	r600_ring_init(rdev, ring, 1024 * 1024);
 
 	ring = &rdev->ring[CAYMAN_RING_TYPE_CP1_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "comp_%d.%d.%d", 1, ring->pipe, ring->queue);
 	r600_ring_init(rdev, ring, 1024 * 1024);
 
 	ring = &rdev->ring[CAYMAN_RING_TYPE_CP2_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "comp_%d.%d.%d", 2, ring->pipe, ring->queue);
 	r600_ring_init(rdev, ring, 1024 * 1024);
 
 	ring = &rdev->ring[R600_RING_TYPE_DMA_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma0");
 	r600_ring_init(rdev, ring, 64 * 1024);
 
 	ring = &rdev->ring[CAYMAN_RING_TYPE_DMA1_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma1");
 	r600_ring_init(rdev, ring, 64 * 1024);
 
 	si_uvd_init(rdev);

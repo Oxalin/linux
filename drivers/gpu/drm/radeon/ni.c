@@ -1978,6 +1978,7 @@ bool cayman_gfx_is_lockup(struct radeon_device *rdev, struct radeon_ring *ring)
 static void cayman_uvd_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring = &rdev->ring[R600_RING_TYPE_UVD_INDEX];
 
 	if (!rdev->has_uvd)
 		return;
@@ -1994,8 +1995,10 @@ static void cayman_uvd_init(struct radeon_device *rdev)
 		rdev->has_uvd = false;
 		return;
 	}
-	rdev->ring[R600_RING_TYPE_UVD_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_UVD_INDEX], 4096);
+
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "uvd");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void cayman_uvd_start(struct radeon_device *rdev)
@@ -2394,14 +2397,17 @@ int cayman_init(struct radeon_device *rdev)
 	radeon_pm_init(rdev);
 
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "gfx");
 	r600_ring_init(rdev, ring, 1024 * 1024);
 
 	ring = &rdev->ring[R600_RING_TYPE_DMA_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma0");
 	r600_ring_init(rdev, ring, 64 * 1024);
 
 	ring = &rdev->ring[CAYMAN_RING_TYPE_DMA1_INDEX];
 	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma1");
 	r600_ring_init(rdev, ring, 64 * 1024);
 
 	cayman_uvd_init(rdev);
