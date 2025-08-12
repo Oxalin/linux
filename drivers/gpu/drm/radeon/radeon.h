@@ -810,6 +810,7 @@ struct radeon_ring {
 	bool			ready;
 	u32			nop;
 	u32			idx;
+	char			name[16];
 	u64			last_semaphore_signal_addr;
 	u64			last_semaphore_wait_addr;
 	/* for CIK queues */
