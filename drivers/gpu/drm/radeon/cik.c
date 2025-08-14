@@ -8558,8 +8558,8 @@ int cik_suspend(struct radeon_device *rdev)
  */
 int cik_init(struct radeon_device *rdev)
 {
-	struct radeon_ring *ring;
 	int r;
+	struct radeon_ring *ring;
 
 	/* Read BIOS */
 	if (!radeon_get_bios(rdev)) {

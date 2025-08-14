@@ -2048,6 +2048,7 @@ static void cayman_uvd_resume(struct radeon_device *rdev)
 static void cayman_vce_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring;
 
 	/* Only set for CHIP_ARUBA */
 	if (!rdev->has_vce)
@@ -2065,10 +2066,16 @@ static void cayman_vce_init(struct radeon_device *rdev)
 		rdev->has_vce = false;
 		return;
 	}
-	rdev->ring[TN_RING_TYPE_VCE1_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[TN_RING_TYPE_VCE1_INDEX], 4096);
-	rdev->ring[TN_RING_TYPE_VCE2_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[TN_RING_TYPE_VCE2_INDEX], 4096);
+
+	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "vce0");
+	r600_ring_init(rdev, ring, 4096);
+
+	ring = &rdev->ring[TN_RING_TYPE_VCE2_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "vce1");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void cayman_vce_start(struct radeon_device *rdev)
@@ -2330,8 +2337,8 @@ int cayman_suspend(struct radeon_device *rdev)
  */
 int cayman_init(struct radeon_device *rdev)
 {
-	struct radeon_ring *ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
 	int r;
+	struct radeon_ring *ring;
 
 	/* Read BIOS */
 	if (!radeon_get_bios(rdev)) {
@@ -2396,6 +2403,7 @@ int cayman_init(struct radeon_device *rdev)
 	/* Initialize power management */
 	radeon_pm_init(rdev);
 
+	ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
 	ring->ring_obj = NULL;
 	sprintf(ring->name, "gfx");
 	r600_ring_init(rdev, ring, 1024 * 1024);

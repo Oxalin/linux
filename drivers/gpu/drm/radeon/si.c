@@ -6819,8 +6819,8 @@ int si_suspend(struct radeon_device *rdev)
  */
 int si_init(struct radeon_device *rdev)
 {
-	struct radeon_ring *ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
 	int r;
+	struct radeon_ring *ring;
 
 	/* Read BIOS */
 	if (!radeon_get_bios(rdev)) {
