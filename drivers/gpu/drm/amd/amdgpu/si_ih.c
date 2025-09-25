@@ -36,6 +36,13 @@
 
 static void si_ih_set_interrupt_funcs(struct amdgpu_device *adev);
 
+/**
+ * si_ih_enable_interrupts - Enable the interrupt ring buffer
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Enable the interrupt ring buffer (SI).
+ */
 static void si_ih_enable_interrupts(struct amdgpu_device *adev)
 {
 	u32 ih_cntl = RREG32(IH_CNTL);
@@ -48,6 +55,13 @@ static void si_ih_enable_interrupts(struct amdgpu_device *adev)
 	adev->irq.ih.enabled = true;
 }
 
+/**
+ * si_ih_disable_interrupts - Disable the interrupt ring buffer
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Disable the interrupt ring buffer (SI).
+ */
 static void si_ih_disable_interrupts(struct amdgpu_device *adev)
 {
 	u32 ih_rb_cntl = RREG32(IH_RB_CNTL);
@@ -63,6 +77,17 @@ static void si_ih_disable_interrupts(struct amdgpu_device *adev)
 	adev->irq.ih.rptr = 0;
 }
 
+/**
+ * si_ih_irq_init - init and enable the interrupt ring
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Allocate a ring buffer for the interrupt controller,
+ * enable the RLC, disable interrupts, enable the IH
+ * ring buffer and enable it (SI).
+ * Called at device load and reume.
+ * Returns 0 for success, errors for failure.
+ */
 static int si_ih_irq_init(struct amdgpu_device *adev)
 {
 	struct amdgpu_ih_ring *ih = &adev->irq.ih;
@@ -102,12 +127,31 @@ static int si_ih_irq_init(struct amdgpu_device *adev)
 	return 0;
 }
 
+/**
+ * si_ih_irq_disable - disable interrupts
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Disable interrupts on the hw (SI).
+ */
 static void si_ih_irq_disable(struct amdgpu_device *adev)
 {
 	si_ih_disable_interrupts(adev);
 	mdelay(1);
 }
 
+/**
+ * si_ih_get_wptr - get the IH ring buffer wptr
+ *
+ * @adev: amdgpu_device pointer
+ * @ih: IH ring buffer to fetch wptr
+ *
+ * Get the IH ring buffer wptr from either the register
+ * or the writeback memory buffer (SI).  Also check for
+ * ring buffer overflow and deal with it.
+ * Used by cik_irq_process().
+ * Returns the value of the wptr.
+ */
 static u32 si_ih_get_wptr(struct amdgpu_device *adev,
 			  struct amdgpu_ih_ring *ih)
 {
@@ -133,6 +177,37 @@ static u32 si_ih_get_wptr(struct amdgpu_device *adev,
 	return (wptr & ih->ptr_mask);
 }
 
+/*        SI IV Ring
+ * Each IV ring entry is 128 bits:
+ * [7:0]    - interrupt source id
+ * [31:8]   - reserved
+ * [59:32]  - interrupt source data
+ * [63:60]  - reserved
+ * [71:64]  - RINGID
+ *            CP:
+ *            ME_ID [1:0], PIPE_ID[1:0], QUEUE_ID[2:0]
+ *            QUEUE_ID - for compute, which of the 8 queues owned by the dispatcher
+ *                     - for gfx, hw shader state (0=PS...5=LS, 6=CS)
+ *            ME_ID - 0 = gfx, 1 = first 4 CS pipes, 2 = second 4 CS pipes
+ *            PIPE_ID - ME0 0=3D
+ *                    - ME1&2 compute dispatcher (4 pipes each)
+ *            SDMA:
+ *            INSTANCE_ID [1:0], QUEUE_ID[1:0]
+ *            INSTANCE_ID - 0 = sdma0, 1 = sdma1
+ *            QUEUE_ID - 0 = gfx, 1 = rlc0, 2 = rlc1
+ * [79:72]  - VMID
+ * [95:80]  - reserved: PASID not used on SI
+ * [127:96] - reserved
+ */
+
+ /**
+ * si_ih_decode_iv - decode an interrupt vector
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Decodes the interrupt vector at the current rptr
+ * position and also advance the position.
+ */
 static void si_ih_decode_iv(struct amdgpu_device *adev,
 			    struct amdgpu_ih_ring *ih,
 			    struct amdgpu_iv_entry *entry)
@@ -154,6 +229,14 @@ static void si_ih_decode_iv(struct amdgpu_device *adev,
 	ih->rptr += 16;
 }
 
+/**
+ * si_ih_set_rptr - set the IH ring buffer rptr
+ *
+ * @adev: amdgpu_device pointer
+ * @ih: IH ring buffer to set wptr
+ *
+ * Set the IH ring buffer rptr.
+ */
 static void si_ih_set_rptr(struct amdgpu_device *adev,
 			   struct amdgpu_ih_ring *ih)
 {

@@ -50,11 +50,25 @@ static void si_dma_set_buffer_funcs(struct amdgpu_device *adev);
 static void si_dma_set_vm_pte_funcs(struct amdgpu_device *adev);
 static void si_dma_set_irq_funcs(struct amdgpu_device *adev);
 
+/**
+ * si_dma_ring_get_rptr - get the current read pointer
+ *
+ * @ring: amdgpu ring pointer
+ *
+ * Get the current rptr from the hardware (SI).
+ */
 static uint64_t si_dma_ring_get_rptr(struct amdgpu_ring *ring)
 {
 	return *ring->rptr_cpu_addr;
 }
 
+/**
+ * si_dma_ring_get_wptr - get the current write pointer
+ *
+ * @ring: amdgpu ring pointer
+ *
+ * Get the current wptr from the hardware (SI).
+ */
 static uint64_t si_dma_ring_get_wptr(struct amdgpu_ring *ring)
 {
 	struct amdgpu_device *adev = ring->adev;
@@ -63,6 +77,13 @@ static uint64_t si_dma_ring_get_wptr(struct amdgpu_ring *ring)
 	return (RREG32(DMA_RB_WPTR + sdma_offsets[me]) & 0x3fffc) >> 2;
 }
 
+/**
+ * si_dma_ring_set_wptr - commit the write pointer
+ *
+ * @ring: amdgpu ring pointer
+ *
+ * Write the wptr back to the hardware (SI).
+ */
 static void si_dma_ring_set_wptr(struct amdgpu_ring *ring)
 {
 	struct amdgpu_device *adev = ring->adev;
@@ -71,6 +92,16 @@ static void si_dma_ring_set_wptr(struct amdgpu_ring *ring)
 	WREG32(DMA_RB_WPTR + sdma_offsets[me], (ring->wptr << 2) & 0x3fffc);
 }
 
+/**
+ * si_dma_ring_emit_ib - Schedule an IB on the DMA engine
+ *
+ * @ring: amdgpu ring pointer
+ * @job: job to retrive vmid from
+ * @ib: IB object to schedule
+ * @flags: unused
+ *
+ * Schedule an IB in the DMA ring (SI).
+ */
 static void si_dma_ring_emit_ib(struct amdgpu_ring *ring,
 				struct amdgpu_job *job,
 				struct amdgpu_ib *ib,
@@ -103,13 +134,13 @@ static void si_dma_ring_emit_ib(struct amdgpu_ring *ring,
 static void si_dma_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
 				      unsigned flags)
 {
-
 	bool write64bit = flags & AMDGPU_FENCE_FLAG_64BIT;
 	/* write the fence */
 	amdgpu_ring_write(ring, DMA_PACKET(DMA_PACKET_FENCE, 0, 0, 0, 0));
 	amdgpu_ring_write(ring, addr & 0xfffffffc);
 	amdgpu_ring_write(ring, (upper_32_bits(addr) & 0xff));
 	amdgpu_ring_write(ring, seq);
+
 	/* optionally write high bits as well */
 	if (write64bit) {
 		addr += 4;
@@ -118,10 +149,18 @@ static void si_dma_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
 		amdgpu_ring_write(ring, (upper_32_bits(addr) & 0xff));
 		amdgpu_ring_write(ring, upper_32_bits(seq));
 	}
+
 	/* generate an interrupt */
 	amdgpu_ring_write(ring, DMA_PACKET(DMA_PACKET_TRAP, 0, 0, 0, 0));
 }
 
+/**
+ * si_dma_stop - stop the async dma engines
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Stop the async dma ring buffers (SI).
+ */
 static void si_dma_stop(struct amdgpu_device *adev)
 {
 	u32 rb_cntl;
@@ -135,6 +174,14 @@ static void si_dma_stop(struct amdgpu_device *adev)
 	}
 }
 
+/**
+ * si_dma_start - setup and start the dma engines
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Set up the DMA engines and enable them (SI).
+ * Returns 0 for success, error for failure.
+ */
 static int si_dma_start(struct amdgpu_device *adev)
 {
 	struct amdgpu_ring *ring;
