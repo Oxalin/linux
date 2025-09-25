@@ -7009,20 +7009,30 @@ static int si_power_control_set_level(struct amdgpu_device *adev)
 	int ret;
 
 	ret = si_restrict_performance_levels_before_switch(adev);
-	if (ret)
+	if (ret) {
+		DRM_ERROR("%s si_restrict_performance_levels_before_switch() failed\n", __func__);
 		return ret;
+	}
 	ret = si_halt_smc(adev);
-	if (ret)
+	if (ret) {
+		DRM_ERROR("%s si_halt_smc() failed\n", __func__);
 		return ret;
+	}
 	ret = si_populate_smc_tdp_limits(adev, new_ps);
-	if (ret)
+	if (ret) {
+		DRM_ERROR("%s si_populate_smc_tdp_limits() failed\n", __func__);
 		return ret;
+	}
 	ret = si_populate_smc_tdp_limits_2(adev, new_ps);
-	if (ret)
+	if (ret) {
+		DRM_ERROR("%s si_populate_smc_tdp_limits_2() failed\n", __func__);
 		return ret;
+	}
 	ret = si_resume_smc(adev);
-	if (ret)
+	if (ret) {
+		DRM_ERROR("%s si_resume_smc() failed\n", __func__);
 		return ret;
+	}
 	return si_set_sw_state(adev);
 }
 
@@ -7818,6 +7828,10 @@ static int si_dpm_hw_init(struct amdgpu_ip_block *ip_block)
 		adev->pm.dpm_enabled = false;
 	else
 		adev->pm.dpm_enabled = true;
+
+	// DRM_INFO("Manually deactivating dpm_enabled for SI for debug purposes.");
+	// adev->pm.dpm_enabled = false;
+
 	amdgpu_legacy_dpm_compute_clocks(adev);
 	mutex_unlock(&adev->pm.mutex);
 	return ret;

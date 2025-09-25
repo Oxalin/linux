@@ -846,10 +846,13 @@ int amdgpu_bo_pin(struct amdgpu_bo *bo, u32 domain)
 
 	/* A shared bo cannot be migrated to VRAM */
 	if (bo->tbo.base.import_attach) {
-		if (domain & AMDGPU_GEM_DOMAIN_GTT)
+		if (domain & AMDGPU_GEM_DOMAIN_GTT) {
 			domain = AMDGPU_GEM_DOMAIN_GTT;
-		else
+		}
+		else {
+			DRM_INFO("%s : Shared bo can't be migrated to VRAM", __func__);
 			return -EINVAL;
+		}
 	}
 
 	if (bo->tbo.pin_count) {
