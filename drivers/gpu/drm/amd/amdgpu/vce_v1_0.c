@@ -30,16 +30,19 @@
 #include "amdgpu.h"
 #include "amdgpu_vce.h"
 #include "sid.h"
+
 #include "vce/vce_1_0_d.h"
 #include "vce/vce_1_0_sh_mask.h"
-#include "smu/smu_7_0_1_d.h"
-#include "smu/smu_7_0_1_sh_mask.h"
+
 #include "oss/oss_1_0_d.h"
 #include "oss/oss_1_0_sh_mask.h"
 
+#include "smu/smu_7_0_1_d.h"
+#include "smu/smu_7_0_1_sh_mask.h"
+
 #define VCE_V1_0_FW_SIZE	(256 * 1024)
 #define VCE_V1_0_STACK_SIZE	(64 * 1024)
-#define VCE_V1_0_DATA_SIZE	(23552 * AMDGPU_MAX_VCE_HANDLES)
+#define VCE_V1_0_DATA_SIZE	(7808 * (AMDGPU_MAX_VCE_HANDLES + 1))
 #define VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK	0x02
 
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
