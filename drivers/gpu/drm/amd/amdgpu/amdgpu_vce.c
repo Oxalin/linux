@@ -179,6 +179,8 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 	const struct common_firmware_header *hdr;
 	unsigned int ucode_version, version_major, version_minor, binary_id;
 	int i, r;
+	uint32_t domain = AMDGPU_GEM_DOMAIN_VRAM |
+		AMDGPU_GEM_DOMAIN_GTT;
 
 	switch (adev->asic_type) {
 #ifdef CONFIG_DRM_AMDGPU_SI
@@ -291,10 +293,10 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 	DRM_INFO("the requested 'size' we are about to use is (%d)", size);
 
 	r = amdgpu_bo_create_kernel(adev, size, PAGE_SIZE,
-				    AMDGPU_GEM_DOMAIN_VRAM |
-				    AMDGPU_GEM_DOMAIN_GTT,
+				    domain,
 				    &adev->vce.vcpu_bo,
-				    &adev->vce.gpu_addr, &adev->vce.cpu_addr);
+				    &adev->vce.gpu_addr,
+				    &adev->vce.cpu_addr);
 	if (r) {
 		dev_err(adev->dev, "(%d) failed to allocate VCE bo\n", r);
 		return r;
