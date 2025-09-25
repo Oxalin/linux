@@ -406,7 +406,7 @@ static void dce_v6_0_set_vga_render_state(struct amdgpu_device *adev,
 {
 	if (!render)
 		WREG32(mmVGA_RENDER_CONTROL,
-			RREG32(mmVGA_RENDER_CONTROL) & VGA_VSTATUS_CNTL);
+			RREG32(mmVGA_RENDER_CONTROL) & ~VGA_RENDER_CONTROL__VGA_VSTATUS_CNTL_MASK);
 }
 
 static int dce_v6_0_get_num_crtc(struct amdgpu_device *adev)
@@ -1008,16 +1008,16 @@ static void dce_v6_0_program_watermarks(struct amdgpu_device *adev,
 	/* select wm A */
 	arb_control3 = RREG32(mmDPG_PIPE_ARBITRATION_CONTROL3 + amdgpu_crtc->crtc_offset);
 	tmp = arb_control3;
-	tmp &= ~LATENCY_WATERMARK_MASK(3);
-	tmp |= LATENCY_WATERMARK_MASK(1);
+	tmp &= ~(3 << DPG_PIPE_ARBITRATION_CONTROL3__URGENCY_WATERMARK_MASK__SHIFT);
+	tmp |= (1 << DPG_PIPE_ARBITRATION_CONTROL3__URGENCY_WATERMARK_MASK__SHIFT);
 	WREG32(mmDPG_PIPE_ARBITRATION_CONTROL3 + amdgpu_crtc->crtc_offset, tmp);
 	WREG32(mmDPG_PIPE_URGENCY_CONTROL + amdgpu_crtc->crtc_offset,
 	       ((latency_watermark_a << DPG_PIPE_URGENCY_CONTROL__URGENCY_LOW_WATERMARK__SHIFT)  |
 		(line_time << DPG_PIPE_URGENCY_CONTROL__URGENCY_HIGH_WATERMARK__SHIFT)));
 	/* select wm B */
 	tmp = RREG32(mmDPG_PIPE_ARBITRATION_CONTROL3 + amdgpu_crtc->crtc_offset);
-	tmp &= ~LATENCY_WATERMARK_MASK(3);
-	tmp |= LATENCY_WATERMARK_MASK(2);
+	tmp &= ~(3 << DPG_PIPE_ARBITRATION_CONTROL3__URGENCY_WATERMARK_MASK__SHIFT);
+	tmp |= (2 << DPG_PIPE_ARBITRATION_CONTROL3__URGENCY_WATERMARK_MASK__SHIFT);
 	WREG32(mmDPG_PIPE_ARBITRATION_CONTROL3 + amdgpu_crtc->crtc_offset, tmp);
 	WREG32(mmDPG_PIPE_URGENCY_CONTROL + amdgpu_crtc->crtc_offset,
 	       ((latency_watermark_b << DPG_PIPE_URGENCY_CONTROL__URGENCY_LOW_WATERMARK__SHIFT) |
@@ -1084,7 +1084,7 @@ static u32 dce_v6_0_line_buffer_adjust(struct amdgpu_device *adev,
 	}
 
 	WREG32(mmDC_LB_MEMORY_SPLIT + amdgpu_crtc->crtc_offset,
-	       DC_LB_MEMORY_CONFIG(tmp));
+	       (tmp << DC_LB_MEMORY_SPLIT__DC_LB_MEMORY_CONFIG__SHIFT));
 
 	WREG32(mmPIPE0_DMIF_BUFFER_CONTROL + pipe_offset,
 	       (buffer_alloc << PIPE0_DMIF_BUFFER_CONTROL__DMIF_BUFFERS_ALLOCATED__SHIFT));
@@ -1881,7 +1881,7 @@ static int dce_v6_0_crtc_do_set_base(struct drm_crtc *crtc,
 	struct amdgpu_bo *abo;
 	uint64_t fb_location, tiling_flags;
 	uint32_t fb_format, fb_pitch_pixels, pipe_config;
-	u32 fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_NONE);
+	u32 fb_swap = (GRPH_ENDIAN_NONE << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 	u32 viewport_w, viewport_h;
 	int r;
 	bool bypass_lut = false;
@@ -1921,76 +1921,76 @@ static int dce_v6_0_crtc_do_set_base(struct drm_crtc *crtc,
 
 	switch (target_fb->format->format) {
 	case DRM_FORMAT_C8:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_8BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_INDEXED));
+		fb_format = ((GRPH_DEPTH_8BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_INDEXED << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 		break;
 	case DRM_FORMAT_XRGB4444:
 	case DRM_FORMAT_ARGB4444:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_16BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB4444));
+		fb_format = ((GRPH_DEPTH_16BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB4444 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN16);
+		fb_swap = (GRPH_ENDIAN_8IN16 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	case DRM_FORMAT_XRGB1555:
 	case DRM_FORMAT_ARGB1555:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_16BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB1555));
+		fb_format = ((GRPH_DEPTH_16BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB1555 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN16);
+		fb_swap = (GRPH_ENDIAN_8IN16 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	case DRM_FORMAT_BGRX5551:
 	case DRM_FORMAT_BGRA5551:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_16BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_BGRA5551));
+		fb_format = ((GRPH_DEPTH_16BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_BGRA5551 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN16);
+		fb_swap = (GRPH_ENDIAN_8IN16 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	case DRM_FORMAT_RGB565:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_16BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB565));
+		fb_format = ((GRPH_DEPTH_16BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB565 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN16);
+		fb_swap = (GRPH_ENDIAN_8IN16 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	case DRM_FORMAT_XRGB8888:
 	case DRM_FORMAT_ARGB8888:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_32BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB8888));
+		fb_format = ((GRPH_DEPTH_32BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB8888 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN32);
+		fb_swap = (GRPH_ENDIAN_8IN32 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	case DRM_FORMAT_XRGB2101010:
 	case DRM_FORMAT_ARGB2101010:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_32BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB2101010));
+		fb_format = ((GRPH_DEPTH_32BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB2101010 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN32);
+		fb_swap = (GRPH_ENDIAN_8IN32 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		/* Greater 8 bpc fb needs to bypass hw-lut to retain precision */
 		bypass_lut = true;
 		break;
 	case DRM_FORMAT_BGRX1010102:
 	case DRM_FORMAT_BGRA1010102:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_32BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_BGRA1010102));
+		fb_format = ((GRPH_DEPTH_32BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_BGRA1010102 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap = GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN32);
+		fb_swap = (GRPH_ENDIAN_8IN32 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		/* Greater 8 bpc fb needs to bypass hw-lut to retain precision */
 		bypass_lut = true;
 		break;
 	case DRM_FORMAT_XBGR8888:
 	case DRM_FORMAT_ABGR8888:
-		fb_format = (GRPH_DEPTH(GRPH_DEPTH_32BPP) |
-			     GRPH_FORMAT(GRPH_FORMAT_ARGB8888));
-		fb_swap = (GRPH_RED_CROSSBAR(GRPH_RED_SEL_B) |
-			   GRPH_BLUE_CROSSBAR(GRPH_BLUE_SEL_R));
+		fb_format = ((GRPH_DEPTH_32BPP << GRPH_CONTROL__GRPH_DEPTH__SHIFT) |
+			     (GRPH_FORMAT_ARGB8888 << GRPH_CONTROL__GRPH_FORMAT__SHIFT));
+		fb_swap = ((GRPH_RED_SEL_B << GRPH_SWAP_CNTL__GRPH_RED_CROSSBAR__SHIFT) |
+			   (GRPH_BLUE_SEL_R << GRPH_SWAP_CNTL__GRPH_BLUE_CROSSBAR__SHIFT));
 #ifdef __BIG_ENDIAN
-		fb_swap |= GRPH_ENDIAN_SWAP(GRPH_ENDIAN_8IN32);
+		fb_swap |= (GRPH_ENDIAN_8IN32 << GRPH_SWAP_CNTL__GRPH_ENDIAN_SWAP__SHIFT);
 #endif
 		break;
 	default:
@@ -2008,18 +2008,18 @@ static int dce_v6_0_crtc_do_set_base(struct drm_crtc *crtc,
 		tile_split = AMDGPU_TILING_GET(tiling_flags, TILE_SPLIT);
 		num_banks = AMDGPU_TILING_GET(tiling_flags, NUM_BANKS);
 
-		fb_format |= GRPH_NUM_BANKS(num_banks);
-		fb_format |= GRPH_ARRAY_MODE(GRPH_ARRAY_2D_TILED_THIN1);
-		fb_format |= GRPH_TILE_SPLIT(tile_split);
-		fb_format |= GRPH_BANK_WIDTH(bankw);
-		fb_format |= GRPH_BANK_HEIGHT(bankh);
-		fb_format |= GRPH_MACRO_TILE_ASPECT(mtaspect);
+		fb_format |= (num_banks << GRPH_CONTROL__GRPH_NUM_BANKS__SHIFT);
+		fb_format |= (GRPH_ARRAY_2D_TILED_THIN1 << GRPH_CONTROL__GRPH_ARRAY_MODE__SHIFT);
+		fb_format |= (tile_split << GRPH_CONTROL__GRPH_TILE_SPLIT__SHIFT);
+		fb_format |= (bankw << GRPH_CONTROL__GRPH_BANK_WIDTH__SHIFT);
+		fb_format |= (bankh << GRPH_CONTROL__GRPH_BANK_HEIGHT__SHIFT);
+		fb_format |= (mtaspect << GRPH_CONTROL__GRPH_MACRO_TILE_ASPECT__SHIFT);
 	} else if (AMDGPU_TILING_GET(tiling_flags, ARRAY_MODE) == ARRAY_1D_TILED_THIN1) {
-		fb_format |= GRPH_ARRAY_MODE(GRPH_ARRAY_1D_TILED_THIN1);
+		fb_format |= (GRPH_ARRAY_1D_TILED_THIN1 << GRPH_CONTROL__GRPH_ARRAY_MODE__SHIFT);
 	}
 
 	pipe_config = AMDGPU_TILING_GET(tiling_flags, PIPE_CONFIG);
-	fb_format |= GRPH_PIPE_CONFIG(pipe_config);
+	fb_format |= (pipe_config << GRPH_CONTROL__GRPH_PIPE_CONFIG__SHIFT);
 
 	dce_v6_0_vga_enable(crtc, false);
 
@@ -2103,7 +2103,7 @@ static void dce_v6_0_set_interleave(struct drm_crtc *crtc,
 
 	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
 		WREG32(mmDATA_FORMAT + amdgpu_crtc->crtc_offset,
-		       INTERLEAVE_EN);
+			DATA_FORMAT__INTERLEAVE_EN_MASK);
 	else
 		WREG32(mmDATA_FORMAT + amdgpu_crtc->crtc_offset, 0);
 }
@@ -2155,19 +2155,19 @@ static void dce_v6_0_crtc_load_lut(struct drm_crtc *crtc)
 	}
 
 	WREG32(mmDEGAMMA_CONTROL + amdgpu_crtc->crtc_offset,
-	       ((0 << DEGAMMA_CONTROL__GRPH_DEGAMMA_MODE__SHIFT) |
-		(0 << DEGAMMA_CONTROL__OVL_DEGAMMA_MODE__SHIFT) |
-		ICON_DEGAMMA_MODE(0) |
-		(0 << DEGAMMA_CONTROL__CURSOR_DEGAMMA_MODE__SHIFT)));
+	       ((DEGAMMA_BYPASS << DEGAMMA_CONTROL__GRPH_DEGAMMA_MODE__SHIFT) |
+		(DEGAMMA_BYPASS << DEGAMMA_CONTROL__OVL_DEGAMMA_MODE__SHIFT) |
+		(DEGAMMA_BYPASS << DEGAMMA_CONTROL__ICON_DEGAMMA_MODE__SHIFT) |
+		(DEGAMMA_BYPASS << DEGAMMA_CONTROL__CURSOR_DEGAMMA_MODE__SHIFT)));
 	WREG32(mmGAMUT_REMAP_CONTROL + amdgpu_crtc->crtc_offset,
-	       ((0 << GAMUT_REMAP_CONTROL__GRPH_GAMUT_REMAP_MODE__SHIFT) |
-		(0 << GAMUT_REMAP_CONTROL__OVL_GAMUT_REMAP_MODE__SHIFT)));
+	       ((GAMUT_REMAP_BYPASS << GAMUT_REMAP_CONTROL__GRPH_GAMUT_REMAP_MODE__SHIFT) |
+		(GAMUT_REMAP_BYPASS << GAMUT_REMAP_CONTROL__OVL_GAMUT_REMAP_MODE__SHIFT)));
 	WREG32(mmREGAMMA_CONTROL + amdgpu_crtc->crtc_offset,
-	       ((0 << REGAMMA_CONTROL__GRPH_REGAMMA_MODE__SHIFT) |
-		(0 << REGAMMA_CONTROL__OVL_REGAMMA_MODE__SHIFT)));
+	       ((REGAMMA_BYPASS << REGAMMA_CONTROL__GRPH_REGAMMA_MODE__SHIFT) |
+		(REGAMMA_BYPASS << REGAMMA_CONTROL__OVL_REGAMMA_MODE__SHIFT)));
 	WREG32(mmOUTPUT_CSC_CONTROL + amdgpu_crtc->crtc_offset,
-	       ((0 << OUTPUT_CSC_CONTROL__OUTPUT_CSC_GRPH_MODE__SHIFT) |
-		(0 << OUTPUT_CSC_CONTROL__OUTPUT_CSC_OVL_MODE__SHIFT)));
+	       ((OUTPUT_CSC_BYPASS << OUTPUT_CSC_CONTROL__OUTPUT_CSC_GRPH_MODE__SHIFT) |
+		(OUTPUT_CSC_BYPASS << OUTPUT_CSC_CONTROL__OUTPUT_CSC_OVL_MODE__SHIFT)));
 	/* XXX match this to the depth of the crtc fmt block, move to modeset? */
 	WREG32(0x1a50 + amdgpu_crtc->crtc_offset, 0);
 
@@ -2954,12 +2954,12 @@ static void dce_v6_0_set_crtc_vblank_interrupt_state(struct amdgpu_device *adev,
 	switch (state) {
 	case AMDGPU_IRQ_STATE_DISABLE:
 		interrupt_mask = RREG32(mmINT_MASK + reg_block);
-		interrupt_mask &= ~VBLANK_INT_MASK;
+		interrupt_mask &= ~INT_MASK__VBLANK_INT_MASK;
 		WREG32(mmINT_MASK + reg_block, interrupt_mask);
 		break;
 	case AMDGPU_IRQ_STATE_ENABLE:
 		interrupt_mask = RREG32(mmINT_MASK + reg_block);
-		interrupt_mask |= VBLANK_INT_MASK;
+		interrupt_mask |= INT_MASK__VBLANK_INT_MASK;
 		WREG32(mmINT_MASK + reg_block, interrupt_mask);
 		break;
 	default:
@@ -3005,12 +3005,12 @@ static void dce_v6_0_set_crtc_vline_interrupt_state(struct amdgpu_device *adev,
 	switch (state) {
 	case AMDGPU_IRQ_STATE_DISABLE:
 		lb_interrupt_mask = RREG32(mmINT_MASK + reg_block);
-		lb_interrupt_mask &= ~VLINE_INT_MASK;
+		lb_interrupt_mask &= ~INT_MASK__VLINE_INT_MASK;
 		WREG32(mmINT_MASK + reg_block, lb_interrupt_mask);
 		break;
 	case AMDGPU_IRQ_STATE_ENABLE:
 		lb_interrupt_mask = RREG32(mmINT_MASK + reg_block);
-		lb_interrupt_mask |= VLINE_INT_MASK;
+		lb_interrupt_mask |= INT_MASK__VLINE_INT_MASK;
 		WREG32(mmINT_MASK + reg_block, lb_interrupt_mask);
 		break;
 	default:
@@ -3033,12 +3033,12 @@ static int dce_v6_0_set_hpd_interrupt_state(struct amdgpu_device *adev,
 	switch (state) {
 	case AMDGPU_IRQ_STATE_DISABLE:
 		dc_hpd_int_cntl = RREG32(mmDC_HPD1_INT_CONTROL + hpd_offsets[type]);
-		dc_hpd_int_cntl &= ~DC_HPDx_INT_EN;
+		dc_hpd_int_cntl &= ~DC_HPD1_INT_CONTROL__DC_HPD1_INT_EN_MASK;
 		WREG32(mmDC_HPD1_INT_CONTROL + hpd_offsets[type], dc_hpd_int_cntl);
 		break;
 	case AMDGPU_IRQ_STATE_ENABLE:
 		dc_hpd_int_cntl = RREG32(mmDC_HPD1_INT_CONTROL + hpd_offsets[type]);
-		dc_hpd_int_cntl |= DC_HPDx_INT_EN;
+		dc_hpd_int_cntl |= DC_HPD1_INT_CONTROL__DC_HPD1_INT_EN_MASK;
 		WREG32(mmDC_HPD1_INT_CONTROL + hpd_offsets[type], dc_hpd_int_cntl);
 		break;
 	default:
@@ -3108,7 +3108,7 @@ static int dce_v6_0_crtc_irq(struct amdgpu_device *adev,
 	switch (entry->src_data[0]) {
 	case 0: /* vblank */
 		if (disp_int & interrupt_status_offsets[crtc].vblank)
-			WREG32(mmVBLANK_STATUS + crtc_offsets[crtc], VBLANK_ACK);
+			WREG32(mmVBLANK_STATUS + crtc_offsets[crtc], VBLANK_STATUS__VBLANK_ACK_MASK);
 		else
 			DRM_DEBUG("IH: IH event w/o asserted irq bit?\n");
 
@@ -3119,7 +3119,7 @@ static int dce_v6_0_crtc_irq(struct amdgpu_device *adev,
 		break;
 	case 1: /* vline */
 		if (disp_int & interrupt_status_offsets[crtc].vline)
-			WREG32(mmVLINE_STATUS + crtc_offsets[crtc], VLINE_ACK);
+			WREG32(mmVLINE_STATUS + crtc_offsets[crtc], VLINE_STATUS__VLINE_ACK_MASK);
 		else
 			DRM_DEBUG("IH: IH event w/o asserted irq bit?\n");
 

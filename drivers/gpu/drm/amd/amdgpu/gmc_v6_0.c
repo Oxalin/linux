@@ -33,13 +33,19 @@
 
 #include "bif/bif_3_0_d.h"
 #include "bif/bif_3_0_sh_mask.h"
+
 #include "oss/oss_1_0_d.h"
 #include "oss/oss_1_0_sh_mask.h"
+
 #include "gmc/gmc_6_0_d.h"
 #include "gmc/gmc_6_0_sh_mask.h"
+
 #include "dce/dce_6_0_d.h"
 #include "dce/dce_6_0_sh_mask.h"
-#include "si_enums.h"
+
+#include "amdgpu_atombios.h"
+
+// #include "si_enums.h"
 
 static void gmc_v6_0_set_gmc_funcs(struct amdgpu_device *adev);
 static void gmc_v6_0_set_irq_funcs(struct amdgpu_device *adev);

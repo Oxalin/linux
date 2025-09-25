@@ -45,13 +45,13 @@ static void si_ih_set_interrupt_funcs(struct amdgpu_device *adev);
  */
 static void si_ih_enable_interrupts(struct amdgpu_device *adev)
 {
-	u32 ih_cntl = RREG32(IH_CNTL);
-	u32 ih_rb_cntl = RREG32(IH_RB_CNTL);
+	u32 ih_cntl = RREG32(mmIH_CNTL);
+	u32 ih_rb_cntl = RREG32(mmIH_RB_CNTL);
 
-	ih_cntl |= ENABLE_INTR;
-	ih_rb_cntl |= IH_RB_ENABLE;
-	WREG32(IH_CNTL, ih_cntl);
-	WREG32(IH_RB_CNTL, ih_rb_cntl);
+	ih_cntl |= IH_CNTL__ENABLE_INTR_MASK;
+	ih_rb_cntl |= IH_RB_CNTL__RB_ENABLE_MASK;
+	WREG32(mmIH_CNTL, ih_cntl);
+	WREG32(mmIH_RB_CNTL, ih_rb_cntl);
 	adev->irq.ih.enabled = true;
 }
 
@@ -64,15 +64,16 @@ static void si_ih_enable_interrupts(struct amdgpu_device *adev)
  */
 static void si_ih_disable_interrupts(struct amdgpu_device *adev)
 {
-	u32 ih_rb_cntl = RREG32(IH_RB_CNTL);
-	u32 ih_cntl = RREG32(IH_CNTL);
+	u32 ih_rb_cntl = RREG32(mmIH_RB_CNTL);
+	u32 ih_cntl = RREG32(mmIH_CNTL);
 
-	ih_rb_cntl &= ~IH_RB_ENABLE;
-	ih_cntl &= ~ENABLE_INTR;
-	WREG32(IH_RB_CNTL, ih_rb_cntl);
-	WREG32(IH_CNTL, ih_cntl);
-	WREG32(IH_RB_RPTR, 0);
-	WREG32(IH_RB_WPTR, 0);
+	ih_rb_cntl &= ~IH_RB_CNTL__RB_ENABLE_MASK;
+	ih_cntl &= ~IH_CNTL__ENABLE_INTR_MASK;
+	WREG32(mmIH_RB_CNTL, ih_rb_cntl);
+	WREG32(mmIH_CNTL, ih_cntl);
+	/* set rptr, wptr to 0 */
+	WREG32(mmIH_RB_RPTR, 0);
+	WREG32(mmIH_RB_WPTR, 0);
 	adev->irq.ih.enabled = false;
 	adev->irq.ih.rptr = 0;
 }
@@ -95,31 +96,36 @@ static int si_ih_irq_init(struct amdgpu_device *adev)
 	u32 interrupt_cntl, ih_cntl, ih_rb_cntl;
 
 	si_ih_disable_interrupts(adev);
-	/* set dummy read address to dummy page address */
-	WREG32(INTERRUPT_CNTL2, adev->dummy_page_addr >> 8);
-	interrupt_cntl = RREG32(INTERRUPT_CNTL);
-	interrupt_cntl &= ~IH_DUMMY_RD_OVERRIDE;
-	interrupt_cntl &= ~IH_REQ_NONSNOOP_EN;
-	WREG32(INTERRUPT_CNTL, interrupt_cntl);
 
-	WREG32(IH_RB_BASE, adev->irq.ih.gpu_addr >> 8);
+	/* set dummy read address to dummy page address */
+	WREG32(mmINTERRUPT_CNTL2, adev->dummy_page_addr >> 8);
+	interrupt_cntl = RREG32(mmINTERRUPT_CNTL);
+	/* INTERRUPT_CNTL__IH_DUMMY_RD_OVERRIDE_MASK=0 - dummy read disabled with msi, enabled without msi
+	 * INTERRUPT_CNTL__IH_DUMMY_RD_OVERRIDE_MASK=1 - dummy read controlled by IH_DUMMY_RD_EN
+	 */
+	interrupt_cntl &= ~INTERRUPT_CNTL__IH_DUMMY_RD_OVERRIDE_MASK;
+	/* INTERRUPT_CNTL__IH_REQ_NONSNOOP_EN_MASK=1 if ring is in non-cacheable memory, e.g., vram */
+	interrupt_cntl &= ~INTERRUPT_CNTL__IH_REQ_NONSNOOP_EN_MASK;
+	WREG32(mmINTERRUPT_CNTL, interrupt_cntl);
+
+	WREG32(mmIH_RB_BASE, adev->irq.ih.gpu_addr >> 8);
 	rb_bufsz = order_base_2(adev->irq.ih.ring_size / 4);
 
-	ih_rb_cntl = IH_WPTR_OVERFLOW_ENABLE |
-		     IH_WPTR_OVERFLOW_CLEAR |
-		     (rb_bufsz << 1) |
-		     IH_WPTR_WRITEBACK_ENABLE;
+	ih_rb_cntl = (IH_RB_CNTL__WPTR_OVERFLOW_ENABLE_MASK |
+		      IH_RB_CNTL__WPTR_OVERFLOW_CLEAR_MASK |
+		      (rb_bufsz << 1));
 
-	WREG32(IH_RB_WPTR_ADDR_LO, lower_32_bits(ih->wptr_addr));
-	WREG32(IH_RB_WPTR_ADDR_HI, upper_32_bits(ih->wptr_addr) & 0xFF);
-	WREG32(IH_RB_CNTL, ih_rb_cntl);
-	WREG32(IH_RB_RPTR, 0);
-	WREG32(IH_RB_WPTR, 0);
+	ih_rb_cntl |= IH_RB_CNTL__WPTR_WRITEBACK_ENABLE_MASK;
 
-	ih_cntl = MC_WRREQ_CREDIT(0x10) | MC_WR_CLEAN_CNT(0x10) | MC_VMID(0);
+	WREG32(mmIH_RB_WPTR_ADDR_LO, lower_32_bits(ih->wptr_addr));
+	WREG32(mmIH_RB_WPTR_ADDR_HI, upper_32_bits(ih->wptr_addr) & 0xFF);
+
+	WREG32(mmIH_RB_CNTL, ih_rb_cntl);
+	WREG32(mmIH_RB_RPTR, 0);
+	WREG32(mmIH_RB_WPTR, 0);
 	if (adev->irq.msi_enabled)
-		ih_cntl |= RPTR_REARM;
-	WREG32(IH_CNTL, ih_cntl);
+		ih_cntl |= IH_CNTL__RPTR_REARM_MASK;
+	WREG32(mmIH_CNTL, ih_cntl);
 
 	pci_set_master(adev->pdev);
 	si_ih_enable_interrupts(adev);
@@ -164,15 +170,15 @@ static u32 si_ih_get_wptr(struct amdgpu_device *adev,
 		dev_warn(adev->dev, "IH ring buffer overflow (0x%08X, 0x%08X, 0x%08X)\n",
 			wptr, ih->rptr, (wptr + 16) & ih->ptr_mask);
 		ih->rptr = (wptr + 16) & ih->ptr_mask;
-		tmp = RREG32(IH_RB_CNTL);
+		tmp = RREG32(mmIH_RB_CNTL);
 		tmp |= IH_RB_CNTL__WPTR_OVERFLOW_CLEAR_MASK;
-		WREG32(IH_RB_CNTL, tmp);
+		WREG32(mmIH_RB_CNTL, tmp);
 
 		/* Unset the CLEAR_OVERFLOW bit immediately so new overflows
 		 * can be detected.
 		 */
 		tmp &= ~IH_RB_CNTL__WPTR_OVERFLOW_CLEAR_MASK;
-		WREG32(IH_RB_CNTL, tmp);
+		WREG32(mmIH_RB_CNTL, tmp);
 	}
 	return (wptr & ih->ptr_mask);
 }
@@ -240,7 +246,7 @@ static void si_ih_decode_iv(struct amdgpu_device *adev,
 static void si_ih_set_rptr(struct amdgpu_device *adev,
 			   struct amdgpu_ih_ring *ih)
 {
-	WREG32(IH_RB_RPTR, ih->rptr);
+	WREG32(mmIH_RB_RPTR, ih->rptr);
 }
 
 static int si_ih_early_init(struct amdgpu_ip_block *ip_block)
