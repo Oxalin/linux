@@ -212,13 +212,26 @@ static int gmc_v6_0_mc_load_microcode(struct amdgpu_device *adev)
 static void gmc_v6_0_vram_gtt_location(struct amdgpu_device *adev,
 				       struct amdgpu_gmc *mc)
 {
-	u64 base = RREG32(mmMC_VM_FB_LOCATION) & 0xFFFF;
+	// u64 base = RREG32(mmMC_VM_FB_LOCATION) & 0xFFFF;
+	u64 base = 0;
 
-	base <<= 24;
+	if (!amdgpu_sriov_vf(adev)) {
+		base = RREG32(mmMC_VM_FB_LOCATION) & 0xFFFF;
+		base <<= 24;
+	}
+
+	/* Taken from RADEON */
+	// if (mc->mc_vram_size > 0xFFC0000000ULL) {
+	// 	/* leave room for at least 1024M GTT */
+	// 	dev_warn(adev->dev, "limiting VRAM\n");
+	// 	mc->real_vram_size = 0xFFC0000000ULL;
+	// 	mc->mc_vram_size = 0xFFC0000000ULL;
+	// }
 
 	amdgpu_gmc_set_agp_default(adev, mc);
 	amdgpu_gmc_vram_location(adev, mc, base);
-	amdgpu_gmc_gart_location(adev, mc, AMDGPU_GART_PLACEMENT_BEST_FIT);
+	amdgpu_gmc_gart_location(adev, mc, AMDGPU_GART_PLACEMENT_LOW);
+	// amdgpu_gmc_gart_location(adev, mc, AMDGPU_GART_PLACEMENT_BEST_FIT);
 }
 
 static void gmc_v6_0_mc_program(struct amdgpu_device *adev)

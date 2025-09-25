@@ -186,12 +186,18 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 #ifdef CONFIG_DRM_AMDGPU_SI
 	case CHIP_PITCAIRN:
 		fw_name = FIRMWARE_PITCAIRN;
+		domain = AMDGPU_GEM_DOMAIN_GTT;
+		// domain = AMDGPU_GEM_DOMAIN_VRAM;
 		break;
 	case CHIP_TAHITI:
 		fw_name = FIRMWARE_TAHITI;
+		domain = AMDGPU_GEM_DOMAIN_GTT;
+		// domain = AMDGPU_GEM_DOMAIN_VRAM;
 		break;
 	case CHIP_VERDE:
 		fw_name = FIRMWARE_VERDE;
+		domain = AMDGPU_GEM_DOMAIN_GTT;
+		// domain = AMDGPU_GEM_DOMAIN_VRAM;
 		break;
 #endif
 #ifdef CONFIG_DRM_AMDGPU_CIK
