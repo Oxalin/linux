@@ -512,7 +512,6 @@ static int  vce_v1_0_mc_resume(struct amdgpu_device *adev)
 	// return;
 }
 
-
 static bool vce_v1_0_is_idle(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
@@ -739,19 +738,38 @@ static int vce_v1_0_sw_init(struct amdgpu_ip_block *ip_block)
 		return r;
 	}
 
+	/* equivalent to  radeon_vce_init() */
 	r = amdgpu_vce_sw_init(adev, VCE_V1_0_FW_SIZE +
 		VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE);
 	if (r) {
 		DRM_ERROR("amdgpu_vce_sw_init() failed with error %i", r);
 		DRM_INFO("Out %s", __func__);
+		adev->vce.num_rings = 0;
 		return r;
 	}
 
 	r = amdgpu_vce_resume(adev);
 	if (r) {
-		DRM_ERROR("amdgpu_vce_resume() failed with error %i", r);
+		dev_err(adev->dev, "failed VCE resume (%i). \n", r);
 		DRM_INFO("Out %s", __func__);
 		return r;
+	}
+
+	/* May be needed to make sure VCE is up and running */
+	// amdgpu_asic_set_vce_clocks(adev, 10000, 10000);	// Used by other VCE implementation
+	vce_v1_0_enable_mgcg(adev, true);
+	if (adev->pm.dpm_enabled)
+               amdgpu_dpm_enable_vce(adev, true);
+       else {
+		amdgpu_asic_set_vce_clocks(adev, 53300, 40000); // taken from radeon_vce_note_usage
+	        // amdgpu_asic_set_vce_clocks(adev, 10000, 10000);	// Used by other VCE implementation
+       }
+
+	/* This is the closest to RADEON's sw_init sequence*/
+	r = vce_v1_0_mc_resume(adev);
+	if (r) {
+		dev_err(adev->dev, "failed VCE MC resume (%d).\n", r);
+		goto error;
 	}
 
 	for (i = 0; i < adev->vce.num_rings; i++) {
@@ -763,11 +781,21 @@ static int vce_v1_0_sw_init(struct amdgpu_ip_block *ip_block)
 				     hw_prio, NULL);
 		if (r) {
 			DRM_ERROR("amdgpu_ring_init() failed with error %i", r);
-			DRM_INFO("Out %s", __func__);
-			return r;
+			goto error;
+			// DRM_INFO("Out %s", __func__);
+			// return r;
 		}
 	}
 
+	DRM_INFO("Out %s", __func__);
+	return r;
+
+error:
+	for (i = 0; i < adev->vce.num_rings; i++) {
+		ring = &adev->vce.ring[i];
+		ring->ring_size = 0;
+	}
+	DRM_WARN("VCE rings disabled by setting size to 0");
 	DRM_INFO("Out %s", __func__);
 	return r;
 }
@@ -910,18 +938,45 @@ static int vce_v1_0_suspend(struct amdgpu_ip_block *ip_block)
 
 static int vce_v1_0_resume(struct amdgpu_ip_block *ip_block)
 {
-	int r;
-	DRM_INFO("In %s", __func__);
+	DRM_INFO("In %s, same as RADEON si_vce_resume()", __func__);
+	struct amdgpu_device *adev = ip_block->adev;
+	struct amdgpu_ring *ring;
+	int r, i;
 
-	r = amdgpu_vce_resume(ip_block->adev);
+	if (!adev->vce.num_rings || !adev->vce.ring[0].ring_size) {
+		DRM_INFO("Out %s, no VCE to resume", __func__);
+		return -EINVAL;
+	}
+
+	r = amdgpu_vce_resume(adev);
 	if (r){
 		DRM_ERROR("amdgpu_vce_resume() failed with error %i", r);
 		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
+	for (i = 0; i < adev->vce.num_rings; i++) {
+		enum amdgpu_ring_priority_level hw_prio = amdgpu_vce_get_ring_prio(i);
+
+		ring = &adev->vce.ring[i];
+		r = amdgpu_ring_init(adev, ring, ring->ring_size, &adev->vce.irq, 0,
+				     hw_prio, VCE_CMD_NO_OP);
+		if (r) {
+			DRM_ERROR("amdgpu_ring_init() failed with error %i", r);
+			DRM_INFO("Out %s", __func__);
+			return r;
+		}
+	}
+
+	r = vce_v1_0_hw_init(ip_block);
+	if (r){
+		DRM_ERROR("vce_v1_0_hw_init() failed with error %i", r);
+	}
+
+	/* Do we need to start the rings or the fence here? */
+
 	DRM_INFO("Out %s", __func__);
-	return vce_v1_0_hw_init(ip_block);
+	return r;
 }
 
 static int vce_v1_0_soft_reset(struct amdgpu_ip_block *ip_block)
@@ -938,7 +993,7 @@ static int vce_v1_0_soft_reset(struct amdgpu_ip_block *ip_block)
 
 static int vce_v1_0_set_interrupt_state(struct amdgpu_device *adev,
 					struct amdgpu_irq_src *source,
-					unsigned type,
+					unsigned int type,
 					enum amdgpu_interrupt_state state)
 {
 	uint32_t val = 0;
