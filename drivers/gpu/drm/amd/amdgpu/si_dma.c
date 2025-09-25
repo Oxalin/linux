@@ -511,7 +511,7 @@ static int si_dma_early_init(struct amdgpu_ip_block *ip_block)
 {
 	struct amdgpu_device *adev = ip_block->adev;
 
-	adev->sdma.num_instances = 2;
+	adev->sdma.num_instances = DMA_MAX_INSTANCE;
 
 	si_dma_set_ring_funcs(adev);
 	si_dma_set_buffer_funcs(adev);
