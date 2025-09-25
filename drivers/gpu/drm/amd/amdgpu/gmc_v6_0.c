@@ -234,11 +234,23 @@ static void gmc_v6_0_vram_gtt_location(struct amdgpu_device *adev,
 	// amdgpu_gmc_gart_location(adev, mc, AMDGPU_GART_PLACEMENT_BEST_FIT);
 }
 
+/**
+ * gmc_v6_0_mc_program - program the GPU memory controller
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Set the location of vram, gart, and AGP in the GPU's
+ * physical address space (SI).
+ */
 static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 {
+	u32 tmp;
 	int i, j;
 	struct amdgpu_ip_block *ip_block;
 
+	ip_block = amdgpu_device_ip_get_ip_block(adev, AMD_IP_BLOCK_TYPE_GMC);
+	if (!ip_block)
+		return;
 
 	/* Initialize HDP */
 	for (i = 0, j = 0; i < 32; i++, j += 0x6) {
@@ -250,16 +262,10 @@ static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 	}
 	WREG32(mmHDP_REG_COHERENCY_FLUSH_CNTL, 0);
 
-	ip_block = amdgpu_device_ip_get_ip_block(adev, AMD_IP_BLOCK_TYPE_GMC);
-	if (!ip_block)
-		return;
-
 	if (gmc_v6_0_wait_for_idle(ip_block))
 		dev_warn(adev->dev, "Wait for MC idle timedout !\n");
 
 	if (adev->mode_info.num_crtc) {
-		u32 tmp;
-
 		/* Lockout access through VGA aperture*/
 		tmp = RREG32(mmVGA_HDP_CONTROL);
 		tmp |= VGA_HDP_CONTROL__VGA_MEMORY_DISABLE_MASK;
