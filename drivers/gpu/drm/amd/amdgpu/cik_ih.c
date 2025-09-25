@@ -194,7 +194,7 @@ static u32 cik_ih_get_wptr(struct amdgpu_device *adev,
 
 	if (wptr & IH_RB_WPTR__RB_OVERFLOW_MASK) {
 		wptr &= ~IH_RB_WPTR__RB_OVERFLOW_MASK;
-		/* When a ring buffer overflow happen start parsing interrupt
+		/* When a ring buffer overflow happens, start parsing interrupt
 		 * from the last not overwritten vector (wptr + 16). Hopefully
 		 * this should allow us to catchup.
 		 */

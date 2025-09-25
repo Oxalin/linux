@@ -205,7 +205,7 @@ static u32 cz_ih_get_wptr(struct amdgpu_device *adev,
 
 	wptr = REG_SET_FIELD(wptr, IH_RB_WPTR, RB_OVERFLOW, 0);
 
-	/* When a ring buffer overflow happen start parsing interrupt
+	/* When a ring buffer overflow happens, start parsing interrupt
 	 * from the last not overwritten vector (wptr + 16). Hopefully
 	 * this should allow us to catchup.
 	 */
