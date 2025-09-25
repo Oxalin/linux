@@ -937,7 +937,7 @@ static int sdma_v7_0_ring_test_ring(struct amdgpu_ring *ring)
 
 	r = amdgpu_ring_alloc(ring, 5);
 	if (r) {
-		DRM_ERROR("amdgpu: dma failed to lock ring %d (%d).\n", ring->idx, r);
+		DRM_ERROR("amdgpu: dma failed to lock ring %s (%d).\n", ring->name, r);
 		if (!ring->is_mes_queue)
 			amdgpu_device_wb_free(adev, index);
 		return r;
@@ -1424,7 +1424,7 @@ static int sdma_v7_0_ring_preempt_ib(struct amdgpu_ring *ring)
 	ring->trail_seq += 1;
 	r = amdgpu_ring_alloc(ring, 10);
 	if (r) {
-		DRM_ERROR("ring %d failed to be allocated \n", ring->idx);
+		DRM_ERROR("ring %s failed to be allocated \n", ring->name);
 		return r;
 	}
 	sdma_v7_0_ring_emit_fence(ring, ring->trail_fence_gpu_addr,
@@ -1444,7 +1444,7 @@ static int sdma_v7_0_ring_preempt_ib(struct amdgpu_ring *ring)
 
 	if (i >= adev->usec_timeout) {
 		r = -EINVAL;
-		DRM_ERROR("ring %d failed to be preempted\n", ring->idx);
+		DRM_ERROR("ring %s failed to be preempted\n", ring->name);
 	}
 
 	/* deassert IB preemption */

@@ -5777,7 +5777,7 @@ static int gfx_v9_0_ring_preempt_ib(struct amdgpu_ring *ring)
 
 	if (i >= adev->usec_timeout) {
 		r = -EINVAL;
-		DRM_WARN("ring %d timeout to preempt ib\n", ring->idx);
+		DRM_WARN("ring %s timeout to preempt ib\n", ring->name);
 	}
 
 	/*reset the CP_VMID_PREEMPT after trailing fence*/

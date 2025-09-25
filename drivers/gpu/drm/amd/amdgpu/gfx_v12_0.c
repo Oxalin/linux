@@ -4561,7 +4561,7 @@ static int gfx_v12_0_ring_preempt_ib(struct amdgpu_ring *ring)
 
 	if (i >= adev->usec_timeout) {
 		r = -EINVAL;
-		DRM_ERROR("ring %d failed to preempt ib\n", ring->idx);
+		DRM_ERROR("ring %s failed to preempt ib\n", ring->name);
 	}
 
 	/* deassert preemption condition */

@@ -1945,7 +1945,7 @@ static int amdgpu_debugfs_ib_preempt(void *data, u64 val)
 	/* preempt the IB */
 	r = amdgpu_ring_preempt_ib(ring);
 	if (r) {
-		DRM_WARN("failed to preempt ring %d\n", ring->idx);
+		DRM_WARN("failed to preempt ring %s\n", ring->name);
 		goto failure;
 	}
 
@@ -1953,7 +1953,7 @@ static int amdgpu_debugfs_ib_preempt(void *data, u64 val)
 
 	if (atomic_read(&ring->fence_drv.last_seq) !=
 	    ring->fence_drv.sync_seq) {
-		DRM_INFO("ring %d was preempted\n", ring->idx);
+		DRM_INFO("ring %s was preempted\n", ring->name);
 
 		amdgpu_ib_preempt_mark_partial_job(ring);
 
