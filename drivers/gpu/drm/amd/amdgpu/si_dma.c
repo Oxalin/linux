@@ -198,7 +198,7 @@ static int si_dma_start(struct amdgpu_device *adev)
  * @ring: amdgpu_ring structure holding ring information
  *
  * Test the DMA engine by writing using it to write an
- * value to memory. (VI).
+ * value to memory. (SI).
  * Returns 0 for success, error for failure.
  */
 static int si_dma_ring_test_ring(struct amdgpu_ring *ring)
@@ -357,7 +357,7 @@ static void si_dma_vm_write_pte(struct amdgpu_ib *ib, uint64_t pe,
 }
 
 /**
- * si_dma_vm_set_pte_pde - update the page tables using sDMA
+ * si_dma_vm_set_pte_pde - update the page tables using DMA
  *
  * @ib: indirect buffer to fill with commands
  * @pe: addr of the page entry
@@ -366,7 +366,7 @@ static void si_dma_vm_write_pte(struct amdgpu_ib *ib, uint64_t pe,
  * @incr: increase next addr by incr bytes
  * @flags: access flags
  *
- * Update the page tables using sDMA (CIK).
+ * Update the page tables using DMA (SI).
  */
 static void si_dma_vm_set_pte_pde(struct amdgpu_ib *ib,
 				     uint64_t pe,
@@ -420,7 +420,7 @@ static void si_dma_ring_pad_ib(struct amdgpu_ring *ring, struct amdgpu_ib *ib)
  *
  * @ring: amdgpu_ring pointer
  *
- * Make sure all previous operations are completed (CIK).
+ * Make sure all previous operations are completed (SI).
  */
 static void si_dma_ring_emit_pipeline_sync(struct amdgpu_ring *ring)
 {
@@ -438,14 +438,14 @@ static void si_dma_ring_emit_pipeline_sync(struct amdgpu_ring *ring)
 }
 
 /**
- * si_dma_ring_emit_vm_flush - cik vm flush using sDMA
+ * si_dma_ring_emit_vm_flush - cik vm flush using DMA
  *
  * @ring: amdgpu_ring pointer
  * @vmid: vmid number to use
  * @pd_addr: address
  *
  * Update the page table base and flush the VM TLB
- * using sDMA (VI).
+ * using DMA (SI).
  */
 static void si_dma_ring_emit_vm_flush(struct amdgpu_ring *ring,
 				      unsigned vmid, uint64_t pd_addr)
@@ -761,7 +761,7 @@ static void si_dma_set_irq_funcs(struct amdgpu_device *adev)
 }
 
 /**
- * si_dma_emit_copy_buffer - copy buffer using the sDMA engine
+ * si_dma_emit_copy_buffer - copy buffer using the DMA engine
  *
  * @ib: indirect buffer to copy to
  * @src_offset: src GPU address
@@ -788,14 +788,14 @@ static void si_dma_emit_copy_buffer(struct amdgpu_ib *ib,
 }
 
 /**
- * si_dma_emit_fill_buffer - fill buffer using the sDMA engine
+ * si_dma_emit_fill_buffer - fill buffer using the DMA engine
  *
- * @ib: indirect buffer to copy to
+ * @ib: indirect buffer to fill
  * @src_data: value to write to buffer
  * @dst_offset: dst GPU address
  * @byte_count: number of bytes to xfer
  *
- * Fill GPU buffers using the DMA engine (VI).
+ * Fill GPU buffers using the DMA engine (SI).
  */
 static void si_dma_emit_fill_buffer(struct amdgpu_ib *ib,
 				       uint32_t src_data,

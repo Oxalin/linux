@@ -348,7 +348,7 @@ int amdgpu_vce_resume(struct amdgpu_device *adev)
  *
  * @work: pointer to work structure
  *
- * power of VCE when it's not used any more
+ * power off VCE when it's not used any more
  */
 static void amdgpu_vce_idle_work_handler(struct work_struct *work)
 {

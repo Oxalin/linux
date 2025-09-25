@@ -938,7 +938,7 @@ void amdgpu_gmc_get_vbios_allocations(struct amdgpu_device *adev)
 	 * of the driver writes to first 8M of VRAM on S3 resume,
 	 * this overrides GART which by default gets placed in first 8M and
 	 * causes VM_FAULTS once GTT is accessed.
-	 * Keep the stolen memory reservation until the while this is not solved.
+	 * Keep the stolen memory reservation while this is not solved.
 	 */
 	switch (adev->asic_type) {
 	case CHIP_VEGA10:
