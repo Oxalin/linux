@@ -359,13 +359,11 @@ static bool cik_ih_is_idle(void *handle)
 static int cik_ih_wait_for_idle(struct amdgpu_ip_block *ip_block)
 {
 	unsigned i;
-	u32 tmp;
 	struct amdgpu_device *adev = ip_block->adev;
 
 	for (i = 0; i < adev->usec_timeout; i++) {
-		/* read MC_STATUS */
-		tmp = RREG32(mmSRBM_STATUS) & SRBM_STATUS__IH_BUSY_MASK;
-		if (!tmp)
+		/* check MC_STATUS */
+		if (cik_ih_is_idle(adev))
 			return 0;
 		udelay(1);
 	}
