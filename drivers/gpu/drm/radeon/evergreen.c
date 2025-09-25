@@ -2914,6 +2914,7 @@ void evergreen_mc_program(struct radeon_device *rdev)
 		WREG32(MC_VM_AGP_TOP, 0x0FFFFFFF);
 		WREG32(MC_VM_AGP_BOT, 0x0FFFFFFF);
 	}
+
 	if (evergreen_mc_wait_for_idle(rdev)) {
 		dev_warn(rdev->dev, "Wait for MC idle timedout !\n");
 	}
@@ -4932,6 +4933,7 @@ restart_ih:
 static void evergreen_uvd_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring = &rdev->ring[R600_RING_TYPE_UVD_INDEX];
 
 	if (!rdev->has_uvd)
 		return;
@@ -4948,8 +4950,10 @@ static void evergreen_uvd_init(struct radeon_device *rdev)
 		rdev->has_uvd = false;
 		return;
 	}
-	rdev->ring[R600_RING_TYPE_UVD_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_UVD_INDEX], 4096);
+
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "uvd");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void evergreen_uvd_start(struct radeon_device *rdev)
@@ -5176,6 +5180,7 @@ int evergreen_suspend(struct radeon_device *rdev)
 int evergreen_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring;
 
 	/* Read BIOS */
 	if (!radeon_get_bios(rdev)) {
@@ -5250,11 +5255,15 @@ int evergreen_init(struct radeon_device *rdev)
 	/* Initialize power management */
 	radeon_pm_init(rdev);
 
-	rdev->ring[RADEON_RING_TYPE_GFX_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[RADEON_RING_TYPE_GFX_INDEX], 1024 * 1024);
+	ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "gfx");
+	r600_ring_init(rdev, ring, 1024 * 1024);
 
-	rdev->ring[R600_RING_TYPE_DMA_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_DMA_INDEX], 64 * 1024);
+	ring = &rdev->ring[R600_RING_TYPE_DMA_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma0");
+	r600_ring_init(rdev, ring, 64 * 1024);
 
 	evergreen_uvd_init(rdev);
 

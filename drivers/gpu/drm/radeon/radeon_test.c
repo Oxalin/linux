@@ -296,7 +296,7 @@ static int radeon_test_create_and_emit_fence(struct radeon_device *rdev,
 	} else {
 		r = radeon_ring_lock(rdev, ring, 64);
 		if (r) {
-			DRM_ERROR("Failed to lock ring A %d\n", ring->idx);
+			DRM_ERROR("Failed to lock ring A %s\n", ring->name);
 			return r;
 		}
 		r = radeon_fence_emit(rdev, fence, ring->idx);

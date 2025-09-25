@@ -1687,6 +1687,7 @@ static int rv770_mc_init(struct radeon_device *rdev)
 static void rv770_uvd_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring = &rdev->ring[R600_RING_TYPE_UVD_INDEX];
 
 	if (!rdev->has_uvd)
 		return;
@@ -1703,8 +1704,10 @@ static void rv770_uvd_init(struct radeon_device *rdev)
 		rdev->has_uvd = false;
 		return;
 	}
-	rdev->ring[R600_RING_TYPE_UVD_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_UVD_INDEX], 4096);
+
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "uvd");
+	r600_ring_init(rdev, ring, 4096);
 }
 
 static void rv770_uvd_start(struct radeon_device *rdev)
@@ -1905,6 +1908,7 @@ int rv770_suspend(struct radeon_device *rdev)
 int rv770_init(struct radeon_device *rdev)
 {
 	int r;
+	struct radeon_ring *ring;
 
 	/* Read BIOS */
 	if (!radeon_get_bios(rdev)) {
@@ -1963,11 +1967,15 @@ int rv770_init(struct radeon_device *rdev)
 	/* Initialize power management */
 	radeon_pm_init(rdev);
 
-	rdev->ring[RADEON_RING_TYPE_GFX_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[RADEON_RING_TYPE_GFX_INDEX], 1024 * 1024);
+	ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "gfx");
+	r600_ring_init(rdev, ring, 1024 * 1024);
 
-	rdev->ring[R600_RING_TYPE_DMA_INDEX].ring_obj = NULL;
-	r600_ring_init(rdev, &rdev->ring[R600_RING_TYPE_DMA_INDEX], 64 * 1024);
+	ring = &rdev->ring[R600_RING_TYPE_DMA_INDEX];
+	ring->ring_obj = NULL;
+	sprintf(ring->name, "sdma0");
+	r600_ring_init(rdev, ring, 64 * 1024);
 
 	rv770_uvd_init(rdev);
 

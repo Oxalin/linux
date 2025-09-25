@@ -662,7 +662,7 @@ int cik_sdma_ring_test(struct radeon_device *rdev,
 
 	r = radeon_ring_lock(rdev, ring, 5);
 	if (r) {
-		DRM_ERROR("radeon: dma failed to lock ring %d (%d).\n", ring->idx, r);
+		DRM_ERROR("radeon: dma failed to lock ring %s (%d).\n", ring->name, r);
 		return r;
 	}
 	radeon_ring_write(ring, SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
