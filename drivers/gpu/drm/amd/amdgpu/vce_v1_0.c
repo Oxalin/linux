@@ -57,9 +57,11 @@ static uint64_t vce_v1_0_ring_get_rptr(struct amdgpu_ring *ring)
 	struct amdgpu_device *adev = ring->adev;
 
 	if (ring->me == 0) {
+		// DRM_INFO("%s - mmVCE_RB_RPTR %d", __func__, RREG32(mmVCE_RB_RPTR));
 		return RREG32(mmVCE_RB_RPTR);
 	}
 	else {
+		// DRM_INFO("%s - mmVCE_RB_RPTR2 %d", __func__, RREG32(mmVCE_RB_RPTR2));
 		return RREG32(mmVCE_RB_RPTR2);
 	}
 }
@@ -76,9 +78,11 @@ static uint64_t vce_v1_0_ring_get_wptr(struct amdgpu_ring *ring)
 	struct amdgpu_device *adev = ring->adev;
 
 	if (ring->me == 0) {
+		// DRM_INFO("%s - mmVCE_RB_WPTR %d", __func__, RREG32(mmVCE_RB_WPTR));
 		return RREG32(mmVCE_RB_WPTR);
 	}
 	else {
+		// DRM_INFO("%s - mmVCE_RB_WPTR2 %d", __func__, RREG32(mmVCE_RB_WPTR2));
 		return RREG32(mmVCE_RB_WPTR2);
 	}
 }
@@ -94,10 +98,14 @@ static void vce_v1_0_ring_set_wptr(struct amdgpu_ring *ring)
 {
 	struct amdgpu_device *adev = ring->adev;
 
-	if (ring->me == 0)
+	if (ring->me == 0) {
+		DRM_INFO("In %s - mmVCE_RB_WPTR", __func__);
 		WREG32(mmVCE_RB_WPTR, lower_32_bits(ring->wptr));
-	else
+	}
+	else {
+		DRM_INFO("In %s - mmVCE_RB_WPTR2", __func__);
 		WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
+	}
 }
 
 static int vce_v1_0_lmi_clean(struct amdgpu_device *adev)
@@ -123,12 +131,14 @@ static int vce_v1_0_lmi_clean(struct amdgpu_device *adev)
 
 static int vce_v1_0_firmware_loaded(struct amdgpu_device *adev)
 {
-	int i, j;
 	DRM_INFO("In %s", __func__);
+	int i, j;
 
 	for (i = 0; i < 10; ++i) {
+		uint32_t status;
 		for (j = 0; j < 100; ++j) {
-			uint32_t status = RREG32(mmVCE_STATUS);
+			status = RREG32(mmVCE_STATUS);
+			// DRM_INFO("mmVCE_STATUS value: %d", status);
 
 			if (status & VCE_STATUS_VCPU_REPORT_FW_LOADED_MASK) {
 				DRM_INFO("Out %s", __func__);
@@ -186,24 +196,28 @@ static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 // from Radeon vce 1.0
 static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 {
-	u32 tmp;
 	DRM_INFO("In %s", __func__);
+	u32 tmp;
 
 	tmp = RREG32(mmVCE_CLOCK_GATING_A);
 	tmp |= CGC_DYN_CLOCK_MODE;
+	DRM_INFO("Writting %d to mmVCE_CLOCK_GATING_A", tmp);
 	WREG32(mmVCE_CLOCK_GATING_A, tmp);
 
 	tmp = RREG32(mmVCE_CLOCK_GATING_B);
 	tmp |= 0x1e;
 	tmp &= ~0xe100e1;
+	DRM_INFO("Writting %d to mmVCE_CLOCK_GATING_B", tmp);
 	WREG32(mmVCE_CLOCK_GATING_B, tmp);
 
 	tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
 	tmp &= ~0xff9ff000;
+	DRM_INFO("Writting %d to mmVCE_UENC_CLOCK_GATING", tmp);
 	WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
 
 	tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
 	tmp &= ~0x3ff;
+	DRM_INFO("Writting %d to mmVCE_UENC_REG_CLOCK_GATING", tmp);
 	WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
 
 	DRM_INFO("Out %s", __func__);
@@ -330,16 +344,17 @@ static bool vce_v1_0_is_idle(void *handle)
 
 static int vce_v1_0_wait_for_idle(struct amdgpu_ip_block *ip_block)
 {
-	struct amdgpu_device *adev = ip_block->adev;
-	unsigned i;
 	DRM_INFO("In %s", __func__);
+	struct amdgpu_device *adev = ip_block->adev;
+	unsigned int i;
 
 	for (i = 0; i < adev->usec_timeout; i++) {
 		if (vce_v1_0_is_idle(adev)) {
-			DRM_INFO("Out %s", __func__);
 			return 0;
 		}
 	}
+
+	DRM_ERROR("%d usec reached. Timed out: %d.", adev->usec_timeout, -ETIMEDOUT);
 	DRM_INFO("Out %s", __func__);
 	return -ETIMEDOUT;
 }
@@ -353,9 +368,9 @@ static int vce_v1_0_wait_for_idle(struct amdgpu_ip_block *ip_block)
  */
 static int vce_v1_0_start(struct amdgpu_device *adev)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_ring *ring;
 	int r;
-	DRM_INFO("In %s", __func__);
 
 	/* set BUSY flag */
 	WREG32_P(mmVCE_STATUS, 1, ~1);
@@ -407,7 +422,7 @@ static int vce_v1_0_stop(struct amdgpu_device *adev)
 	DRM_INFO("In %s", __func__);
 
 	if (vce_v1_0_lmi_clean(adev)) {
-		DRM_INFO("vce is not idle \n");
+		DRM_INFO("VCE is not idle \n");
 		DRM_INFO("Out %s", __func__);
 		return 0;
 	}
@@ -420,7 +435,7 @@ static int vce_v1_0_stop(struct amdgpu_device *adev)
 	}
 
 	if (vce_v1_0_wait_for_idle(ip_block)) {
-		DRM_INFO("VCE is busy, Can't set clock gating");
+		DRM_INFO("VCE is busy, can't set clock gating");
 		DRM_INFO("Out %s", __func__);
 		return 0;
 	}
@@ -598,10 +613,14 @@ static int vce_v1_0_early_init(struct amdgpu_ip_block *ip_block)
 
 static int vce_v1_0_sw_init(struct amdgpu_ip_block *ip_block)
 {
-	DRM_INFO("In %s", __func__);
+	DRM_INFO("In %s, same as si_vce_init() and si_vce_start()", __func__);
 	struct amdgpu_ring *ring;
 	int r, i;
 	struct amdgpu_device *adev = ip_block->adev;
+
+	if (!adev->vce.num_rings) {
+		return -EINVAL;
+	}
 
 	/* VCE */
 	r = amdgpu_irq_add_id(adev, AMDGPU_IRQ_CLIENTID_LEGACY, 167, &adev->vce.irq);
@@ -885,8 +904,8 @@ static const struct amdgpu_ring_funcs vce_v1_0_ring_funcs = {
 
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev)
 {
-	int i;
 	DRM_INFO("In %s", __func__);
+	int i;
 
 	for (i = 0; i < adev->vce.num_rings; i++) {
 		adev->vce.ring[i].funcs = &vce_v1_0_ring_funcs;

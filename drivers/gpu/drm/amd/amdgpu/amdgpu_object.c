@@ -339,11 +339,14 @@ int amdgpu_bo_create_kernel(struct amdgpu_device *adev,
 	r = amdgpu_bo_create_reserved(adev, size, align, domain, bo_ptr,
 				      gpu_addr, cpu_addr);
 
-	if (r)
+	if (r) {
+		DRM_DEBUG("amdgpu_bo_create_reserved() error: %d", r);
 		return r;
+	}
 
-	if (*bo_ptr)
+	if (*bo_ptr) {
 		amdgpu_bo_unreserve(*bo_ptr);
+	}
 
 	return 0;
 }
@@ -556,8 +559,10 @@ int amdgpu_bo_create(struct amdgpu_device *adev,
 		size = ALIGN(size, PAGE_SIZE);
 	}
 
-	if (!amdgpu_bo_validate_size(adev, size, bp->domain))
+	if (!amdgpu_bo_validate_size(adev, size, bp->domain)) {
+		DRM_INFO("%s: bo validation failed in domain %d", __func__, bp->domain);
 		return -ENOMEM;
+	}
 
 	BUG_ON(bp->bo_ptr_size < sizeof(struct amdgpu_bo));
 
@@ -592,8 +597,10 @@ int amdgpu_bo_create(struct amdgpu_device *adev,
 	if (bp->domain & (AMDGPU_GEM_DOMAIN_GWS | AMDGPU_GEM_DOMAIN_OA |
 			  AMDGPU_GEM_DOMAIN_GDS))
 		amdgpu_bo_placement_from_domain(bo, AMDGPU_GEM_DOMAIN_CPU);
-	else
+	else {
+		DRM_INFO("%s: bo placement is done in domain %d", __func__, bp->domain);
 		amdgpu_bo_placement_from_domain(bo, bp->domain);
+	}
 	if (bp->type == ttm_bo_type_kernel)
 		bo->tbo.priority = 2;
 	else if (!(bp->flags & AMDGPU_GEM_CREATE_DISCARDABLE))
@@ -1471,6 +1478,7 @@ uint32_t amdgpu_bo_get_preferred_domain(struct amdgpu_device *adev,
 		if (adev->gmc.real_vram_size <= AMDGPU_SG_THRESHOLD)
 			domain = AMDGPU_GEM_DOMAIN_GTT;
 	}
+	DRM_INFO("%s: prefered domain is %sVRAM (%d)", __func__, domain == AMDGPU_GEM_DOMAIN_VRAM ? "" : "not ", domain);
 	return domain;
 }
 

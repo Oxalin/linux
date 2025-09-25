@@ -107,6 +107,8 @@ static int amdgpu_vce_get_destroy_msg(struct amdgpu_ring *ring, uint32_t handle,
  */
 int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 {
+	DRM_INFO("In %s, same as RADEON radeon_vce_init()", __func__);
+
 	const char *fw_name;
 	const struct common_firmware_header *hdr;
 	unsigned int ucode_version, version_major, version_minor, binary_id;
@@ -176,18 +178,22 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 		break;
 
 	default:
+		DRM_ERROR("Couldn't find asic_type: %x", adev->asic_type);
+		DRM_INFO("Out %s", __func__);
 		return -EINVAL;
 	}
 
 	r = amdgpu_ucode_request(adev, &adev->vce.fw, "%s", fw_name);
 	if (r) {
-		dev_err(adev->dev, "amdgpu_vce: Can't validate firmware \"%s\"\n",
+		dev_err(adev->dev, "amdgpu_vce: can't validate firmware \"%s\"\n",
 			fw_name);
 		amdgpu_ucode_release(&adev->vce.fw);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	hdr = (const struct common_firmware_header *)adev->vce.fw->data;
+	DRM_INFO("hdr->ucode_version: %d", hdr->ucode_version);
 
 	ucode_version = le32_to_cpu(hdr->ucode_version);
 	version_major = (ucode_version >> 20) & 0xfff;
@@ -306,17 +312,22 @@ int amdgpu_vce_suspend(struct amdgpu_device *adev)
  */
 int amdgpu_vce_resume(struct amdgpu_device *adev)
 {
+	DRM_INFO("In %s", __func__);
 	void *cpu_addr;
 	const struct common_firmware_header *hdr;
 	unsigned int offset;
 	int r, idx;
 
-	if (adev->vce.vcpu_bo == NULL)
+	if (adev->vce.vcpu_bo == NULL) {
+		DRM_ERROR("vcpu_bo == NULL");
+		DRM_INFO("Out %s", __func__);
 		return -EINVAL;
+	}
 
 	r = amdgpu_bo_reserve(adev->vce.vcpu_bo, false);
 	if (r) {
 		dev_err(adev->dev, "(%d) failed to reserve VCE bo\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -324,6 +335,7 @@ int amdgpu_vce_resume(struct amdgpu_device *adev)
 	if (r) {
 		amdgpu_bo_unreserve(adev->vce.vcpu_bo);
 		dev_err(adev->dev, "(%d) VCE map failed\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -340,7 +352,8 @@ int amdgpu_vce_resume(struct amdgpu_device *adev)
 
 	amdgpu_bo_unreserve(adev->vce.vcpu_bo);
 
-	return 0;
+	DRM_INFO("Out %s", __func__);
+	return r;
 }
 
 /**
@@ -352,6 +365,8 @@ int amdgpu_vce_resume(struct amdgpu_device *adev)
  */
 static void amdgpu_vce_idle_work_handler(struct work_struct *work)
 {
+	DRM_INFO("In %s", __func__);
+
 	struct amdgpu_device *adev =
 		container_of(work, struct amdgpu_device, vce.idle_work.work);
 	unsigned int i, count = 0;
@@ -372,6 +387,8 @@ static void amdgpu_vce_idle_work_handler(struct work_struct *work)
 	} else {
 		schedule_delayed_work(&adev->vce.idle_work, VCE_IDLE_TIMEOUT);
 	}
+
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -383,11 +400,16 @@ static void amdgpu_vce_idle_work_handler(struct work_struct *work)
  */
 void amdgpu_vce_ring_begin_use(struct amdgpu_ring *ring)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_device *adev = ring->adev;
 	bool set_clocks;
+	int r;
 
-	if (amdgpu_sriov_vf(adev))
+	if (amdgpu_sriov_vf(adev)) {
+		DRM_INFO("amdgpu_sriov_vf() returned true");
+		DRM_INFO("Out %s", __func__);
 		return;
+	}
 
 	mutex_lock(&adev->vce.idle_mutex);
 	set_clocks = !cancel_delayed_work_sync(&adev->vce.idle_work);
@@ -396,14 +418,25 @@ void amdgpu_vce_ring_begin_use(struct amdgpu_ring *ring)
 			amdgpu_dpm_enable_vce(adev, true);
 		} else {
 			amdgpu_asic_set_vce_clocks(adev, 53300, 40000);
-			amdgpu_device_ip_set_clockgating_state(adev, AMD_IP_BLOCK_TYPE_VCE,
+			r = amdgpu_device_ip_set_clockgating_state(adev, AMD_IP_BLOCK_TYPE_VCE,
 							       AMD_CG_STATE_UNGATE);
+			if (r) {
+				DRM_INFO("%s: amdgpu_device_ip_set_clockgating_state() returned error (%d)", __func__, r);
+			}
 			amdgpu_device_ip_set_powergating_state(adev, AMD_IP_BLOCK_TYPE_VCE,
 							       AMD_PG_STATE_UNGATE);
+			if (r) {
+				DRM_INFO("%s: amdgpu_device_ip_set_powergating_state() returned error (%d)", __func__, r);
+			}
 
 		}
 	}
+	else {
+		DRM_WARN("set_clocks was false.");		
+	}
 	mutex_unlock(&adev->vce.idle_mutex);
+
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -415,8 +448,11 @@ void amdgpu_vce_ring_begin_use(struct amdgpu_ring *ring)
  */
 void amdgpu_vce_ring_end_use(struct amdgpu_ring *ring)
 {
+	DRM_INFO("In %s", __func__);
 	if (!amdgpu_sriov_vf(ring->adev))
 		schedule_delayed_work(&ring->adev->vce.idle_work, VCE_IDLE_TIMEOUT);
+
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -429,6 +465,7 @@ void amdgpu_vce_ring_end_use(struct amdgpu_ring *ring)
  */
 void amdgpu_vce_free_handles(struct amdgpu_device *adev, struct drm_file *filp)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_ring *ring = &adev->vce.ring[0];
 	int i, r;
 
@@ -445,6 +482,8 @@ void amdgpu_vce_free_handles(struct amdgpu_device *adev, struct drm_file *filp)
 		adev->vce.filp[i] = NULL;
 		atomic_set(&adev->vce.handles[i], 0);
 	}
+
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -459,6 +498,7 @@ void amdgpu_vce_free_handles(struct amdgpu_device *adev, struct drm_file *filp)
 static int amdgpu_vce_get_create_msg(struct amdgpu_ring *ring, uint32_t handle,
 				     struct dma_fence **fence)
 {
+	DRM_INFO("In %s", __func__);
 	const unsigned int ib_size_dw = 1024;
 	struct amdgpu_job *job;
 	struct amdgpu_ib *ib;
@@ -471,8 +511,11 @@ static int amdgpu_vce_get_create_msg(struct amdgpu_ring *ring, uint32_t handle,
 				     AMDGPU_FENCE_OWNER_UNDEFINED,
 				     ib_size_dw * 4, AMDGPU_IB_POOL_DIRECT,
 				     &job);
-	if (r)
+	if (r) {
+		DRM_ERROR("amdgpu_job_alloc_with_ib() failed with error %d", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
+	}
 
 	memset(&ib_msg, 0, sizeof(ib_msg));
 	/* only one gpu page is needed, alloc +1 page to make addr aligned. */
@@ -531,10 +574,14 @@ static int amdgpu_vce_get_create_msg(struct amdgpu_ring *ring, uint32_t handle,
 	if (fence)
 		*fence = dma_fence_get(f);
 	dma_fence_put(f);
+
+	DRM_INFO("Out %s", __func__);
 	return 0;
 
 err:
 	amdgpu_job_free(job);
+
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -551,6 +598,7 @@ err:
 static int amdgpu_vce_get_destroy_msg(struct amdgpu_ring *ring, uint32_t handle,
 				      bool direct, struct dma_fence **fence)
 {
+	DRM_INFO("In %s", __func__);
 	const unsigned int ib_size_dw = 1024;
 	struct amdgpu_job *job;
 	struct amdgpu_ib *ib;
@@ -562,8 +610,11 @@ static int amdgpu_vce_get_destroy_msg(struct amdgpu_ring *ring, uint32_t handle,
 				     ib_size_dw * 4,
 				     direct ? AMDGPU_IB_POOL_DIRECT :
 				     AMDGPU_IB_POOL_DELAYED, &job);
-	if (r)
+	if (r) {
+		DRM_ERROR("amdgpu_job_alloc_with_ib() failed with error %d", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
+	}
 
 	ib = &job->ibs[0];
 
@@ -602,6 +653,8 @@ static int amdgpu_vce_get_destroy_msg(struct amdgpu_ring *ring, uint32_t handle,
 
 err:
 	amdgpu_job_free(job);
+
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -621,6 +674,7 @@ static int amdgpu_vce_validate_bo(struct amdgpu_cs_parser *p,
 				  struct amdgpu_ib *ib, int lo, int hi,
 				  unsigned int size, int32_t index)
 {
+	DRM_INFO("In %s", __func__);
 	int64_t offset = ((uint64_t)size) * ((int64_t)index);
 	struct ttm_operation_ctx ctx = { false, false };
 	struct amdgpu_bo_va_mapping *mapping;
@@ -644,6 +698,7 @@ static int amdgpu_vce_validate_bo(struct amdgpu_cs_parser *p,
 	if (r) {
 		DRM_ERROR("Can't find BO for addr 0x%010llx %d %d %d %d\n",
 			  addr, lo, hi, size, index);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -652,6 +707,8 @@ static int amdgpu_vce_validate_bo(struct amdgpu_cs_parser *p,
 		bo->placements[i].lpfn = bo->placements[i].lpfn ?
 			min(bo->placements[i].lpfn, lpfn) : lpfn;
 	}
+
+	DRM_INFO("Out %s", __func__);
 	return ttm_bo_validate(&bo->tbo, &bo->placement, &ctx);
 }
 
@@ -671,6 +728,7 @@ static int amdgpu_vce_validate_bo(struct amdgpu_cs_parser *p,
 static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 			       int lo, int hi, unsigned int size, uint32_t index)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_bo_va_mapping *mapping;
 	struct amdgpu_bo *bo;
 	uint64_t addr;
@@ -687,6 +745,7 @@ static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 	if (r) {
 		DRM_ERROR("Can't find BO for addr 0x%010llx %d %d %d %d\n",
 			  addr, lo, hi, size, index);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -694,6 +753,7 @@ static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 	    (mapping->last + 1) * AMDGPU_GPU_PAGE_SIZE) {
 		DRM_ERROR("BO too small for addr 0x%010llx %d %d\n",
 			  addr, lo, hi);
+		DRM_INFO("Out %s", __func__);
 		return -EINVAL;
 	}
 
@@ -704,6 +764,7 @@ static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 	amdgpu_ib_set_value(ib, lo, lower_32_bits(addr));
 	amdgpu_ib_set_value(ib, hi, upper_32_bits(addr));
 
+	DRM_INFO("Out %s", __func__);
 	return 0;
 }
 
@@ -720,6 +781,7 @@ static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 static int amdgpu_vce_validate_handle(struct amdgpu_cs_parser *p,
 				      uint32_t handle, uint32_t *allocated)
 {
+	DRM_INFO("In %s", __func__);
 	unsigned int i;
 
 	/* validate the handle */
@@ -727,8 +789,10 @@ static int amdgpu_vce_validate_handle(struct amdgpu_cs_parser *p,
 		if (atomic_read(&p->adev->vce.handles[i]) == handle) {
 			if (p->adev->vce.filp[i] != p->filp) {
 				DRM_ERROR("VCE handle collision detected!\n");
+				DRM_INFO("Out %s", __func__);
 				return -EINVAL;
 			}
+			DRM_INFO("Out %s", __func__);
 			return i;
 		}
 	}
@@ -739,11 +803,13 @@ static int amdgpu_vce_validate_handle(struct amdgpu_cs_parser *p,
 			p->adev->vce.filp[i] = p->filp;
 			p->adev->vce.img_size[i] = 0;
 			*allocated |= 1 << i;
+			DRM_INFO("Out %s", __func__);
 			return i;
 		}
 	}
 
 	DRM_ERROR("No more free VCE handles!\n");
+	DRM_INFO("Out %s", __func__);
 	return -EINVAL;
 }
 
@@ -758,6 +824,7 @@ int amdgpu_vce_ring_parse_cs(struct amdgpu_cs_parser *p,
 			     struct amdgpu_job *job,
 			     struct amdgpu_ib *ib)
 {
+	DRM_INFO("In %s", __func__);
 	unsigned int fb_idx = 0, bs_idx = 0;
 	int session_idx = -1;
 	uint32_t destroyed = 0;
@@ -982,6 +1049,7 @@ out:
 		if (tmp & (1 << i))
 			atomic_set(&p->adev->vce.handles[i], 0);
 
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -996,6 +1064,7 @@ int amdgpu_vce_ring_parse_cs_vm(struct amdgpu_cs_parser *p,
 				struct amdgpu_job *job,
 				struct amdgpu_ib *ib)
 {
+	DRM_INFO("In %s", __func__);
 	int session_idx = -1;
 	uint32_t destroyed = 0;
 	uint32_t created = 0;
@@ -1073,6 +1142,7 @@ out:
 		if (tmp & (1 << i))
 			atomic_set(&p->adev->vce.handles[i], 0);
 
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -1090,10 +1160,12 @@ void amdgpu_vce_ring_emit_ib(struct amdgpu_ring *ring,
 				struct amdgpu_ib *ib,
 				uint32_t flags)
 {
+	DRM_INFO("In %s", __func__);
 	amdgpu_ring_write(ring, VCE_CMD_IB);
 	amdgpu_ring_write(ring, lower_32_bits(ib->gpu_addr));
 	amdgpu_ring_write(ring, upper_32_bits(ib->gpu_addr));
 	amdgpu_ring_write(ring, ib->length_dw);
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -1108,6 +1180,7 @@ void amdgpu_vce_ring_emit_ib(struct amdgpu_ring *ring,
 void amdgpu_vce_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
 				unsigned int flags)
 {
+	DRM_INFO("In %s", __func__);
 	WARN_ON(flags & AMDGPU_FENCE_FLAG_64BIT);
 
 	amdgpu_ring_write(ring, VCE_CMD_FENCE);
@@ -1116,6 +1189,7 @@ void amdgpu_vce_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
 	amdgpu_ring_write(ring, seq);
 	amdgpu_ring_write(ring, VCE_CMD_TRAP);
 	amdgpu_ring_write(ring, VCE_CMD_END);
+	DRM_INFO("Out %s", __func__);
 }
 
 /**
@@ -1126,20 +1200,28 @@ void amdgpu_vce_ring_emit_fence(struct amdgpu_ring *ring, u64 addr, u64 seq,
  */
 int amdgpu_vce_ring_test_ring(struct amdgpu_ring *ring)
 {
+	DRM_INFO("In %s with ring %s", __func__, ring->name);
 	struct amdgpu_device *adev = ring->adev;
 	uint32_t rptr;
 	unsigned int i;
 	int r, timeout = adev->usec_timeout;
 
 	/* skip ring test for sriov*/
-	if (amdgpu_sriov_vf(adev))
+	if (amdgpu_sriov_vf(adev)) {
+		DRM_INFO("amdgpu_sriov_vf() true");
+		DRM_INFO("Out %s", __func__);
 		return 0;
+	}
 
 	r = amdgpu_ring_alloc(ring, 16);
-	if (r)
+	if (r) {
+		DRM_ERROR("amdgpu_ring_alloc() failed with error %i", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
-
+	}
 	rptr = amdgpu_ring_get_rptr(ring);
+
+	DRM_INFO("%s value is %#018llx", ring->name, rptr);
 
 	amdgpu_ring_write(ring, VCE_CMD_END);
 	amdgpu_ring_commit(ring);
@@ -1150,9 +1232,12 @@ int amdgpu_vce_ring_test_ring(struct amdgpu_ring *ring)
 		udelay(1);
 	}
 
-	if (i >= timeout)
+	if (i >= timeout) {
 		r = -ETIMEDOUT;
+		DRM_ERROR("%d usec reached. Timed out: %d", i, r);
+	}
 
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -1165,29 +1250,43 @@ int amdgpu_vce_ring_test_ring(struct amdgpu_ring *ring)
  */
 int amdgpu_vce_ring_test_ib(struct amdgpu_ring *ring, long timeout)
 {
+	DRM_INFO("In %s", __func__);
 	struct dma_fence *fence = NULL;
 	long r;
 
 	/* skip vce ring1/2 ib test for now, since it's not reliable */
-	if (ring != &ring->adev->vce.ring[0])
+	if (ring != &ring->adev->vce.ring[0]) {
+		DRM_WARN("Skipping VCE ring1/2 ib");
+		DRM_INFO("Out %s", __func__);
 		return 0;
+	}
 
 	r = amdgpu_vce_get_create_msg(ring, 1, NULL);
-	if (r)
+	if (r) {
+		DRM_ERROR("amdgpu_vce_get_create_msg() failed with error %ld", r);
 		goto error;
+	}
 
 	r = amdgpu_vce_get_destroy_msg(ring, 1, true, &fence);
-	if (r)
+	if (r) {
+		DRM_ERROR("amdgpu_vce_get_destroy_msg() failed with error %ld", r);
 		goto error;
+	}
 
 	r = dma_fence_wait_timeout(fence, false, timeout);
-	if (r == 0)
+	if (r == 0) {
+		DRM_ERROR("dma_fence_wait_timeout() failed with error %ld", r);
 		r = -ETIMEDOUT;
-	else if (r > 0)
+	}
+	else if (r > 0) {
+		DRM_ERROR("dma_fence_wait_timeout() failed with error %ld, but acceptable.", r);
 		r = 0;
+	}
 
 error:
 	dma_fence_put(fence);
+
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 

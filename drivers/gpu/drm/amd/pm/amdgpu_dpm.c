@@ -72,6 +72,7 @@ int amdgpu_dpm_get_mclk(struct amdgpu_device *adev, bool low)
 
 int amdgpu_dpm_set_powergating_by_smu(struct amdgpu_device *adev, uint32_t block_type, bool gate)
 {
+	DRM_INFO("In %s", __func__);
 	int ret = 0;
 	const struct amd_pm_funcs *pp_funcs = adev->powerplay.pp_funcs;
 	enum ip_power_state pwr_state = gate ? POWER_STATE_OFF : POWER_STATE_ON;
@@ -79,6 +80,8 @@ int amdgpu_dpm_set_powergating_by_smu(struct amdgpu_device *adev, uint32_t block
 	if (atomic_read(&adev->pm.pwr_state[block_type]) == pwr_state) {
 		dev_dbg(adev->dev, "IP block%d already in the target %s state!",
 				block_type, gate ? "gate" : "ungate");
+
+		DRM_INFO("Out %s", __func__);
 		return 0;
 	}
 
@@ -107,6 +110,7 @@ int amdgpu_dpm_set_powergating_by_smu(struct amdgpu_device *adev, uint32_t block
 
 	mutex_unlock(&adev->pm.mutex);
 
+	DRM_INFO("Out %s", __func__);
 	return ret;
 }
 
@@ -525,6 +529,7 @@ int amdgpu_dpm_set_apu_thermal_limit(struct amdgpu_device *adev, uint32_t limit)
 
 void amdgpu_dpm_compute_clocks(struct amdgpu_device *adev)
 {
+	DRM_INFO("In %s", __func__);
 	const struct amd_pm_funcs *pp_funcs = adev->powerplay.pp_funcs;
 	int i;
 
@@ -546,6 +551,8 @@ void amdgpu_dpm_compute_clocks(struct amdgpu_device *adev)
 	mutex_lock(&adev->pm.mutex);
 	pp_funcs->pm_compute_clocks(adev->powerplay.pp_handle);
 	mutex_unlock(&adev->pm.mutex);
+
+	DRM_INFO("Out %s", __func__);
 }
 
 void amdgpu_dpm_enable_uvd(struct amdgpu_device *adev, bool enable)
@@ -574,6 +581,7 @@ void amdgpu_dpm_enable_uvd(struct amdgpu_device *adev, bool enable)
 
 void amdgpu_dpm_enable_vce(struct amdgpu_device *adev, bool enable)
 {
+	DRM_INFO("In %s", __func__);
 	int ret = 0;
 
 	if (adev->family == AMDGPU_FAMILY_SI) {
@@ -588,6 +596,7 @@ void amdgpu_dpm_enable_vce(struct amdgpu_device *adev, bool enable)
 		mutex_unlock(&adev->pm.mutex);
 
 		amdgpu_dpm_compute_clocks(adev);
+		DRM_INFO("Out %s", __func__);
 		return;
 	}
 
@@ -595,6 +604,8 @@ void amdgpu_dpm_enable_vce(struct amdgpu_device *adev, bool enable)
 	if (ret)
 		DRM_ERROR("Dpm %s vce failed, ret = %d. \n",
 			  enable ? "enable" : "disable", ret);
+
+	DRM_INFO("In %s", __func__);
 }
 
 void amdgpu_dpm_enable_jpeg(struct amdgpu_device *adev, bool enable)

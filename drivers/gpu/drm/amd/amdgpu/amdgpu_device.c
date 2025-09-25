@@ -2157,6 +2157,7 @@ int amdgpu_device_ip_set_clockgating_state(void *dev,
 					   enum amd_ip_block_type block_type,
 					   enum amd_clockgating_state state)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_device *adev = dev;
 	int i, r = 0;
 
@@ -2173,6 +2174,8 @@ int amdgpu_device_ip_set_clockgating_state(void *dev,
 			DRM_ERROR("set_clockgating_state of IP block <%s> failed %d\n",
 				  adev->ip_blocks[i].version->funcs->name, r);
 	}
+
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 
@@ -2191,6 +2194,7 @@ int amdgpu_device_ip_set_powergating_state(void *dev,
 					   enum amd_ip_block_type block_type,
 					   enum amd_powergating_state state)
 {
+	DRM_INFO("In %s", __func__);
 	struct amdgpu_device *adev = dev;
 	int i, r = 0;
 
@@ -2207,6 +2211,8 @@ int amdgpu_device_ip_set_powergating_state(void *dev,
 			DRM_ERROR("set_powergating_state of IP block <%s> failed %d\n",
 				  adev->ip_blocks[i].version->funcs->name, r);
 	}
+
+	DRM_INFO("Out %s", __func__);
 	return r;
 }
 

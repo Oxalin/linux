@@ -356,7 +356,11 @@ int amdgpu_fence_wait_empty(struct amdgpu_ring *ring)
 	rcu_read_unlock();
 
 	r = dma_fence_wait(fence, false);
+	if (r) {
+		DRM_ERROR("dma_fence_wait() failed with error %d", r);
+	}
 	dma_fence_put(fence);
+
 	return r;
 }
 
@@ -489,7 +493,7 @@ int amdgpu_fence_driver_start_ring(struct amdgpu_ring *ring,
 	ring->fence_drv.irq_type = irq_type;
 	ring->fence_drv.initialized = true;
 
-	DRM_DEV_DEBUG(adev->dev, "fence driver on ring %s use gpu addr 0x%016llx\n",
+	dev_info(adev->dev, "fence driver on ring %s uses gpu addr 0x%016llx\n",
 		      ring->name, ring->fence_drv.gpu_addr);
 	return 0;
 }

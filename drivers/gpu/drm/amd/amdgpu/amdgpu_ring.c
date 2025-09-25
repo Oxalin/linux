@@ -80,6 +80,7 @@ unsigned int amdgpu_ring_max_ibs(enum amdgpu_ring_type type)
  */
 int amdgpu_ring_alloc(struct amdgpu_ring *ring, unsigned int ndw)
 {
+	DRM_INFO("In %s", __func__);
 	/* Align requested size with padding so unlock_commit can
 	 * pad safely */
 	ndw = (ndw + ring->funcs->align_mask) & ~ring->funcs->align_mask;
@@ -96,6 +97,7 @@ int amdgpu_ring_alloc(struct amdgpu_ring *ring, unsigned int ndw)
 	if (ring->funcs->begin_use)
 		ring->funcs->begin_use(ring);
 
+	DRM_INFO("Out %s", __func__);
 	return 0;
 }
 
@@ -215,6 +217,7 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 		     unsigned int irq_type, unsigned int hw_prio,
 		     atomic_t *sched_score)
 {
+	// DRM_INFO("In %s", __func__);
 	int r;
 	int sched_hw_submission = amdgpu_sched_hw_submission;
 	u32 *num_sched;
@@ -229,14 +232,17 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 	 */
 	if (ring->funcs->type == AMDGPU_RING_TYPE_KIQ)
 		sched_hw_submission = max(sched_hw_submission, 256);
-	if (ring->funcs->type == AMDGPU_RING_TYPE_MES)
+	else if (ring->funcs->type == AMDGPU_RING_TYPE_MES)
 		sched_hw_submission = 8;
 	else if (ring == &adev->sdma.instance[0].page)
 		sched_hw_submission = 256;
 
 	if (ring->adev == NULL) {
-		if (adev->num_rings >= AMDGPU_MAX_RINGS)
+		if (adev->num_rings >= AMDGPU_MAX_RINGS) {
+			DRM_ERROR("num_rings test: >= %d", AMDGPU_MAX_RINGS);
+			// DRM_INFO("Out %s", __func__);
 			return -EINVAL;
+		}
 
 		ring->adev = adev;
 		ring->num_hw_submission = sched_hw_submission;
@@ -249,8 +255,11 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 		}
 
 		r = amdgpu_fence_driver_init_ring(ring);
-		if (r)
+		if (r) {
+			DRM_ERROR("amdgpu_fence_driver_init_ring() failed with error %d", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
+		}
 	}
 
 	if (ring->is_mes_queue) {
@@ -268,30 +277,35 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 		r = amdgpu_device_wb_get(adev, &ring->rptr_offs);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring rptr_offs wb alloc failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 
 		r = amdgpu_device_wb_get(adev, &ring->wptr_offs);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring wptr_offs wb alloc failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 
 		r = amdgpu_device_wb_get(adev, &ring->fence_offs);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring fence_offs wb alloc failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 
 		r = amdgpu_device_wb_get(adev, &ring->trail_fence_offs);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring trail_fence_offs wb alloc failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 
 		r = amdgpu_device_wb_get(adev, &ring->cond_exe_offs);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring cond_exec_polling wb alloc failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 	}
@@ -327,6 +341,7 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 	r = amdgpu_fence_driver_start_ring(ring, irq_src, irq_type);
 	if (r) {
 		dev_err(adev->dev, "failed initializing fences (%d).\n", r);
+		// DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -363,6 +378,7 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 					    (void **)&ring->ring);
 		if (r) {
 			dev_err(adev->dev, "(%d) ring create failed\n", r);
+			// DRM_INFO("Out %s", __func__);
 			return r;
 		}
 		amdgpu_ring_clear_ring(ring);
@@ -378,6 +394,7 @@ int amdgpu_ring_init(struct amdgpu_device *adev, struct amdgpu_ring *ring,
 			&ring->sched;
 	}
 
+	// DRM_INFO("Out %s", __func__);
 	return 0;
 }
 
@@ -658,6 +675,10 @@ int amdgpu_ring_test_helper(struct amdgpu_ring *ring)
 	DRM_INFO("In %s", __func__);
 	struct amdgpu_device *adev = ring->adev;
 	int r;
+	uint32_t rptr;
+
+	rptr = amdgpu_ring_get_rptr(ring);
+	DRM_INFO("%s value is %#018llx", ring->name, rptr);
 
 	r = amdgpu_ring_test_ring(ring);
 	if (r)
