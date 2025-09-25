@@ -4120,6 +4120,7 @@ bool si_gfx_is_lockup(struct radeon_device *rdev, struct radeon_ring *ring)
 /* MC */
 static void si_mc_program(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, same as AMDGPU gmc_v6_0_mc_program()", __func__);
 	struct evergreen_mc_save save;
 	u32 tmp;
 	int i, j;
@@ -4148,6 +4149,7 @@ static void si_mc_program(struct radeon_device *rdev)
 	       rdev->mc.vram_end >> 12);
 	WREG32(MC_VM_SYSTEM_APERTURE_DEFAULT_ADDR,
 	       rdev->vram_scratch.gpu_addr >> 12);
+
 	tmp = ((rdev->mc.vram_end >> 24) & 0xFFFF) << 16;
 	tmp |= ((rdev->mc.vram_start >> 24) & 0xFFFF);
 	WREG32(MC_VM_FB_LOCATION, tmp);
@@ -4155,6 +4157,7 @@ static void si_mc_program(struct radeon_device *rdev)
 	WREG32(HDP_NONSURFACE_BASE, (rdev->mc.vram_start >> 8));
 	WREG32(HDP_NONSURFACE_INFO, (2 << 7) | (1 << 30));
 	WREG32(HDP_NONSURFACE_SIZE, 0x3FFFFFFF);
+
 	WREG32(MC_VM_AGP_BASE, 0);
 	WREG32(MC_VM_AGP_TOP, 0x0FFFFFFF);
 	WREG32(MC_VM_AGP_BOT, 0x0FFFFFFF);
@@ -4167,6 +4170,8 @@ static void si_mc_program(struct radeon_device *rdev)
 		 * to stop it overwriting our objects */
 		rv515_vga_render_disable(rdev);
 	}
+
+	DRM_INFO("Out %s", __func__);
 }
 
 void si_vram_gtt_location(struct radeon_device *rdev,
@@ -6506,14 +6511,17 @@ static void si_uvd_resume(struct radeon_device *rdev)
 	}
 }
 
+/* Equivalent to AMDGPU vce_v1_0_sw_init()*/
 static void si_vce_init(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, same as AMDGPU vce_v1_0_sw_init()", __func__);
 	int r;
 	struct radeon_ring *ring;
 
 	if (!rdev->has_vce)
 		return;
 
+	/* Equivalent to amdgpu_vce_sw_init() */
 	r = radeon_vce_init(rdev);
 	if (r) {
 		dev_err(rdev->dev, "failed VCE (%d) init.\n", r);
@@ -6524,6 +6532,7 @@ static void si_vce_init(struct radeon_device *rdev)
 		 * hence why we disable vce here.
 		 */
 		rdev->has_vce = false;
+		DRM_INFO("Out %s", __func__);
 		return;
 	}
 
@@ -6536,12 +6545,15 @@ static void si_vce_init(struct radeon_device *rdev)
 	ring->ring_obj = NULL;
 	sprintf(ring->name, "vce1");
 	r600_ring_init(rdev, ring, 4096);
+
+	DRM_INFO("Out %s", __func__);
 }
 
+/* Similar to AMDGPU vce_v1_0_sw_init(), second part */
 static void si_vce_start(struct radeon_device *rdev)
 {
-	DRM_INFO("In %s, similar to AMDGPU vce_v1_0_resume() + radeon_fence_driver_start_ring()", __func__);
-	int r;
+	DRM_INFO("In %s, similar to AMDGPU vce_v1_0_sw_init()", __func__);
+	int r, bar_shift = 8;
 
 	if (!rdev->has_vce) {
 		DRM_INFO("Out %s", __func__);
@@ -6568,6 +6580,8 @@ static void si_vce_start(struct radeon_device *rdev)
 		dev_err(rdev->dev, "failed initializing VCE2 fences (%d).\n", r);
 		goto error;
 	}
+
+	DRM_INFO("Out %s", __func__);
 	return;
 
 error:
@@ -6577,33 +6591,41 @@ error:
 
 static void si_vce_resume(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, same as AMDGPU vce_v1_0_resume()", __func__);
 	struct radeon_ring *ring;
 	int r;
 
-	if (!rdev->has_vce || !rdev->ring[TN_RING_TYPE_VCE1_INDEX].ring_size)
+	if (!rdev->has_vce || !rdev->ring[TN_RING_TYPE_VCE1_INDEX].ring_size) {
+		DRM_INFO("Out %s", __func__);
 		return;
+	}
 
 	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
 	r = radeon_ring_init(rdev, ring, ring->ring_size, 0, VCE_CMD_NO_OP);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing VCE1 ring (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return;
 	}
 	ring = &rdev->ring[TN_RING_TYPE_VCE2_INDEX];
 	r = radeon_ring_init(rdev, ring, ring->ring_size, 0, VCE_CMD_NO_OP);
 	if (r) {
-		dev_err(rdev->dev, "failed initializing VCE1 ring (%d).\n", r);
+		dev_err(rdev->dev, "failed initializing VCE2 ring (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return;
 	}
 	r = vce_v1_0_init(rdev);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing VCE (%d).\n", r);
-		return;
 	}
+
+	DRM_INFO("Out %s", __func__);
+	return;
 }
 
 static int si_startup(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s", __func__);
 	struct radeon_ring *ring;
 	int r;
 
@@ -6614,8 +6636,10 @@ static int si_startup(struct radeon_device *rdev)
 
 	/* scratch needs to be initialized before MC */
 	r = r600_vram_scratch_init(rdev);
-	if (r)
+	if (r) {
+		DRM_INFO("Out %s", __func__);
 		return r;
+	}
 
 	si_mc_program(rdev);
 
@@ -6623,6 +6647,7 @@ static int si_startup(struct radeon_device *rdev)
 		r = si_mc_load_microcode(rdev);
 		if (r) {
 			DRM_ERROR("Failed to load MC firmware!\n");
+			DRM_INFO("Out %s", __func__);
 			return r;
 		}
 	}
@@ -6642,41 +6667,49 @@ static int si_startup(struct radeon_device *rdev)
 	r = sumo_rlc_init(rdev);
 	if (r) {
 		DRM_ERROR("Failed to init rlc BOs!\n");
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	/* allocate wb buffer */
 	r = radeon_wb_init(rdev);
-	if (r)
+	if (r) {
+		DRM_INFO("Out %s", __func__);
 		return r;
+	}
 
 	r = radeon_fence_driver_start_ring(rdev, RADEON_RING_TYPE_GFX_INDEX);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing CP fences (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	r = radeon_fence_driver_start_ring(rdev, CAYMAN_RING_TYPE_CP1_INDEX);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing CP fences (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	r = radeon_fence_driver_start_ring(rdev, CAYMAN_RING_TYPE_CP2_INDEX);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing CP fences (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	r = radeon_fence_driver_start_ring(rdev, R600_RING_TYPE_DMA_INDEX);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing DMA fences (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	r = radeon_fence_driver_start_ring(rdev, CAYMAN_RING_TYPE_DMA1_INDEX);
 	if (r) {
 		dev_err(rdev->dev, "failed initializing DMA fences (%d).\n", r);
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 

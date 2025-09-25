@@ -2902,6 +2902,8 @@ static int si_get_vce_clock_voltage(struct radeon_device *rdev,
 static void si_apply_state_adjust_rules(struct radeon_device *rdev,
 					struct radeon_ps *rps)
 {
+	DRM_INFO("In %s", __func__);
+
 	struct ni_ps *ps = ni_get_ps(rps);
 	struct radeon_clock_and_voltage_limits *max_limits;
 	bool disable_mclk_switching = false;
@@ -3114,6 +3116,7 @@ static void si_apply_state_adjust_rules(struct radeon_device *rdev,
 		if (ps->performance_levels[i].vddc > rdev->pm.dpm.dyn_state.max_clock_voltage_on_dc.vddc)
 			ps->dc_compatible = false;
 	}
+	DRM_INFO("Out %s", __func__);
 }
 
 #if 0

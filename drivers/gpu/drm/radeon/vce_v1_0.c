@@ -102,6 +102,7 @@ void vce_v1_0_set_wptr(struct radeon_device *rdev,
 
 void vce_v1_0_enable_mgcg(struct radeon_device *rdev, bool enable)
 {
+	DRM_INFO("In %s", __func__);
 	u32 tmp;
 
 	if (enable && (rdev->cg_flags & RADEON_CG_SUPPORT_VCE_MGCG)) {
@@ -135,24 +136,31 @@ void vce_v1_0_enable_mgcg(struct radeon_device *rdev, bool enable)
 
 static void vce_v1_0_init_cg(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s", __func__);
 	u32 tmp;
 
 	tmp = RREG32(VCE_CLOCK_GATING_A);
 	tmp |= CGC_DYN_CLOCK_MODE;
+	DRM_INFO("Writting %d to VCE_CLOCK_GATING_A", tmp);
 	WREG32(VCE_CLOCK_GATING_A, tmp);
 
 	tmp = RREG32(VCE_CLOCK_GATING_B);
 	tmp |= 0x1e;
 	tmp &= ~0xe100e1;
+	DRM_INFO("Writting %d to VCE_CLOCK_GATING_B", tmp);
 	WREG32(VCE_CLOCK_GATING_B, tmp);
 
 	tmp = RREG32(VCE_UENC_CLOCK_GATING);
 	tmp &= ~0xff9ff000;
+	DRM_INFO("Writting %d to VCE_UENC_CLOCK_GATING", tmp);
 	WREG32(VCE_UENC_CLOCK_GATING, tmp);
 
 	tmp = RREG32(VCE_UENC_REG_CLOCK_GATING);
 	tmp &= ~0x3ff;
+	DRM_INFO("Writting %d to VCE_UENC_REG_CLOCK_GATING", tmp);
 	WREG32(VCE_UENC_REG_CLOCK_GATING, tmp);
+
+	DRM_INFO("Out %s", __func__);
 }
 
 int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
@@ -175,6 +183,8 @@ int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
 		chip_id = 0x01000017;
 		break;
 	default:
+		DRM_ERROR("family %#010x unsupported", rdev->family);
+		DRM_INFO("Out %s", __func__);
 		return -EINVAL;
 	}
 
@@ -209,7 +219,11 @@ int vce_v1_0_load_fw(struct radeon_device *rdev, uint32_t *data)
 
 unsigned vce_v1_0_bo_size(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s", __func__);
 	WARN_ON(VCE_V1_0_FW_SIZE < rdev->vce_fw->size);
+
+	DRM_INFO("Returning size: %d", VCE_V1_0_FW_SIZE + VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE);
+	DRM_INFO("Out %s", __func__);
 	return VCE_V1_0_FW_SIZE + VCE_V1_0_STACK_SIZE + VCE_V1_0_DATA_SIZE;
 }
 
@@ -288,6 +302,7 @@ int vce_v1_0_resume(struct radeon_device *rdev)
  */
 int vce_v1_0_start(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, same in AMDGPU", __func__);
 	struct radeon_ring *ring;
 	int i, j, r;
 
@@ -295,6 +310,12 @@ int vce_v1_0_start(struct radeon_device *rdev)
 	WREG32_P(VCE_STATUS, 1, ~1);
 
 	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
+	DRM_INFO("VCE_RB_RPTR %#010x", ring->wptr);
+	DRM_INFO("VCE_RB_WPTR %#010x", ring->wptr);
+	DRM_INFO("Complete gpu_addr %#018llx", ring->gpu_addr);
+	DRM_INFO("VCE_RB_BASE_LO %#010x", lower_32_bits(ring->gpu_addr));
+	DRM_INFO("VCE_RB_BASE_HI %#010x", upper_32_bits(ring->gpu_addr));
+	DRM_INFO("VCE_RB_SIZE %d", ring->ring_size / 4);
 	WREG32(VCE_RB_RPTR, ring->wptr);
 	WREG32(VCE_RB_WPTR, ring->wptr);
 	WREG32(VCE_RB_BASE_LO, ring->gpu_addr);
@@ -350,23 +371,30 @@ int vce_v1_0_start(struct radeon_device *rdev)
 		return r;
 	}
 
-	return 0;
+	DRM_INFO("Out %s", __func__);
+	return r;
 }
 
 int vce_v1_0_init(struct radeon_device *rdev)
 {
+	DRM_INFO("In %s, same as AMDGPU vce_v1_0_hw_init()", __func__);
 	struct radeon_ring *ring;
 	int r;
 
 	r = vce_v1_0_start(rdev);
-	if (r)
+	if (r) {
+		DRM_ERROR("vce_v1_0_start() failed");
+		DRM_INFO("Out %s", __func__);
 		return r;
+	}
 
 	ring = &rdev->ring[TN_RING_TYPE_VCE1_INDEX];
 	ring->ready = true;
 	r = radeon_ring_test(rdev, TN_RING_TYPE_VCE1_INDEX, ring);
 	if (r) {
 		ring->ready = false;
+		DRM_ERROR("radeon_ring_test() failed");
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
@@ -375,10 +403,13 @@ int vce_v1_0_init(struct radeon_device *rdev)
 	r = radeon_ring_test(rdev, TN_RING_TYPE_VCE2_INDEX, ring);
 	if (r) {
 		ring->ready = false;
+		DRM_ERROR("radeon_ring_test() failed");
+		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
 	DRM_INFO("VCE initialized successfully.\n");
 
+	DRM_INFO("Out %s", __func__);
 	return 0;
 }
