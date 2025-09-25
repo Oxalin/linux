@@ -26,4 +26,6 @@
 
 extern const struct amdgpu_ip_block_version vce_v1_0_ip_block;
 
+void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable);
+
 #endif
