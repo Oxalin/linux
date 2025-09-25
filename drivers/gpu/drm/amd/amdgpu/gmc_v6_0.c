@@ -287,54 +287,65 @@ static void gmc_v6_0_mc_program(struct amdgpu_device *adev)
 
 static int gmc_v6_0_mc_init(struct amdgpu_device *adev)
 {
-
-	u32 tmp;
-	int chansize, numchan;
 	int r;
+	u32 tmp;
 
-	tmp = RREG32(mmMC_ARB_RAMCFG);
-	if (tmp & (1 << 11))
-		chansize = 16;
-	else if (tmp & MC_ARB_RAMCFG__CHANSIZE_MASK)
-		chansize = 64;
-	else
-		chansize = 32;
+	adev->gmc.vram_width = amdgpu_atombios_get_vram_width(adev);
+	if (!adev->gmc.vram_width) {
+		int chansize, numchan;
 
-	tmp = RREG32(mmMC_SHARED_CHMAP);
-	switch ((tmp & MC_SHARED_CHMAP__NOOFCHAN_MASK) >> MC_SHARED_CHMAP__NOOFCHAN__SHIFT) {
-	case 0:
-	default:
-		numchan = 1;
-		break;
-	case 1:
-		numchan = 2;
-		break;
-	case 2:
-		numchan = 4;
-		break;
-	case 3:
-		numchan = 8;
-		break;
-	case 4:
-		numchan = 3;
-		break;
-	case 5:
-		numchan = 6;
-		break;
-	case 6:
-		numchan = 10;
-		break;
-	case 7:
-		numchan = 12;
-		break;
-	case 8:
-		numchan = 16;
-		break;
+		/* Get VRAM informations */
+		tmp = RREG32(mmMC_ARB_RAMCFG);
+		if (tmp & (1 << 11))
+			chansize = 16;
+		else if (tmp & MC_ARB_RAMCFG__CHANSIZE_MASK)
+			chansize = 64;
+		else
+			chansize = 32;
+
+		tmp = RREG32(mmMC_SHARED_CHMAP);
+		switch ((tmp & MC_SHARED_CHMAP__NOOFCHAN_MASK) >> MC_SHARED_CHMAP__NOOFCHAN__SHIFT) {
+		case 0:
+		default:
+			numchan = 1;
+			break;
+		case 1:
+			numchan = 2;
+			break;
+		case 2:
+			numchan = 4;
+			break;
+		case 3:
+			numchan = 8;
+			break;
+		case 4:
+			numchan = 3;
+			break;
+		case 5:
+			numchan = 6;
+			break;
+		case 6:
+			numchan = 10;
+			break;
+		case 7:
+			numchan = 12;
+			break;
+		case 8:
+			numchan = 16;
+			break;
+		}
+		adev->gmc.vram_width = numchan * chansize;
 	}
-	adev->gmc.vram_width = numchan * chansize;
-	/* size in MB on si */
-	adev->gmc.mc_vram_size = RREG32(mmCONFIG_MEMSIZE) * 1024ULL * 1024ULL;
-	adev->gmc.real_vram_size = RREG32(mmCONFIG_MEMSIZE) * 1024ULL * 1024ULL;
+	/* size in MB on SI */
+	tmp = RREG32(mmCONFIG_MEMSIZE);
+	/* some boards may have garbage in the upper 16 bits */
+	if (tmp & 0xffff0000) {
+		DRM_INFO("Probable bad vram size: 0x%08x\n", tmp);
+		if (tmp & 0xffff)
+			tmp &= 0xffff;
+	}
+	adev->gmc.mc_vram_size = tmp * 1024ULL * 1024ULL;
+	adev->gmc.real_vram_size = adev->gmc.mc_vram_size;
 
 	if (!(adev->flags & AMD_IS_APU)) {
 		r = amdgpu_device_resize_fb_bar(adev);
