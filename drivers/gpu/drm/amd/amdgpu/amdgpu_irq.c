@@ -292,7 +292,7 @@ int amdgpu_irq_init(struct amdgpu_device *adev)
 
 	if (amdgpu_msi_ok(adev)) {
 		adev->irq.msi_enabled = true;
-		dev_dbg(adev->dev, "using MSI/MSI-X.\n");
+		dev_info(adev->dev, "using MSI/MSI-X.\n");
 	}
 
 	INIT_WORK(&adev->irq.ih1_work, amdgpu_irq_handle_ih1);
@@ -315,7 +315,7 @@ int amdgpu_irq_init(struct amdgpu_device *adev)
 	adev->irq.irq = irq;
 	adev_to_drm(adev)->max_vblank_count = 0x00ffffff;
 
-	DRM_DEBUG("amdgpu: irq initialized.\n");
+	DRM_INFO("amdgpu: irq initialized.\n");
 	return 0;
 
 free_vectors:
