@@ -45,6 +45,19 @@
 static void vce_v1_0_set_ring_funcs(struct amdgpu_device *adev);
 static void vce_v1_0_set_irq_funcs(struct amdgpu_device *adev);
 
+struct vce_v1_0_fw_signature
+{
+	int32_t offset;
+	uint32_t length;
+	int32_t number;
+	struct {
+		uint32_t chip_id;
+		uint32_t keyselect;
+		uint32_t nonce[4];
+		uint32_t sigval[4];
+	} val[8];
+};
+
 /**
  * vce_v1_0_ring_get_rptr - get read pointer
  *
@@ -223,113 +236,277 @@ static void vce_v1_0_init_cg(struct amdgpu_device *adev)
 	DRM_INFO("Out %s", __func__);
 }
 
-/* from AMDGPU vce 2.0
-static void vce_v1_0_mc_resume(struct amdgpu_device *adev)
+
+int vce_v1_0_find_keyselect(struct amdgpu_device *adev)
 {
-	uint32_t size, offset;
-
-	WREG32_P(mmVCE_CLOCK_GATING_A, 0, ~(1 << 16));
-	WREG32_P(mmVCE_UENC_CLOCK_GATING, 0x1FF000, ~0xFF9FF000);
-	WREG32_P(mmVCE_UENC_REG_CLOCK_GATING, 0x3F, ~0x3F);
-	WREG32(mmVCE_CLOCK_GATING_B, 0xf7);
-
-	WREG32(mmVCE_LMI_CTRL, 0x00398000);
-	WREG32_P(mmVCE_LMI_CACHE_CTRL, 0x0, ~0x1);
-	WREG32(mmVCE_LMI_SWAP_CNTL, 0);
-	WREG32(mmVCE_LMI_SWAP_CNTL1, 0);
-	WREG32(mmVCE_LMI_VM_CTRL, 0);
-
-	WREG32(mmVCE_LMI_VCPU_CACHE_40BIT_BAR, (adev->vce.gpu_addr >> 8));
-
-	offset = AMDGPU_VCE_FIRMWARE_OFFSET;
-	size = VCE_V1_0_FW_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET0, offset & 0x7fffffff);
-	WREG32(mmVCE_VCPU_CACHE_SIZE0, size);
-
-	offset += size;
-	size = VCE_V1_0_STACK_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET1, offset & 0x7fffffff);
-	WREG32(mmVCE_VCPU_CACHE_SIZE1, size);
-
-	offset += size;
-	size = VCE_V1_0_DATA_SIZE;
-	WREG32(mmVCE_VCPU_CACHE_OFFSET2, offset & 0x7fffffff);
-	WREG32(mmVCE_VCPU_CACHE_SIZE2, size);
-
-	WREG32_P(mmVCE_LMI_CTRL2, 0x0, ~0x100);
-	WREG32_FIELD(VCE_SYS_INT_EN, VCE_SYS_INT_TRAP_INTERRUPT_EN, 1);
-}
-*/
-
-// from Radeon vce 1.0
-static void vce_v1_0_mc_resume(struct amdgpu_device *adev)
-{
-	uint32_t size, offset;
 	DRM_INFO("In %s", __func__);
+	const struct common_firmware_header *hdr= (const struct common_firmware_header *)adev->vce.fw->data;
+	unsigned int ucode_offset = le32_to_cpu(hdr->ucode_array_offset_bytes);
+	struct vce_v1_0_fw_signature *sign;
+	uint32_t chip_id;
+	int i, j;
+
+	sign = (void*)adev->vce.fw->data + ucode_offset;
+
+	switch (adev->asic_type) {
+	case CHIP_TAHITI:
+		chip_id = 0x01000014;
+		break;
+	case CHIP_VERDE:
+		chip_id = 0x01000015;
+		break;
+	case CHIP_PITCAIRN:
+		chip_id = 0x01000016;
+		break;
+	default:
+		DRM_ERROR("asic_type %#010x was not found!", adev->asic_type);
+		DRM_INFO("Out %s", __func__);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < le32_to_cpu(sign->number); ++i) {
+		if (le32_to_cpu(sign->val[i].chip_id) == chip_id) {
+			break;
+		}
+	}
+
+	if (i == le32_to_cpu(sign->number)) {
+		DRM_ERROR("Loop over sign->number (%d)", le32_to_cpu(sign->number));
+		DRM_INFO("Out %s", __func__);
+		return -EINVAL;
+	}
+
+	adev->vce.keyselect = le32_to_cpu(sign->val[i].keyselect);
+	DRM_DEBUG("%s - VCE keyselect: %d", __func__, adev->vce.keyselect);
+
+	DRM_INFO("Out %s", __func__);
+	return 0;
+}
+
+int vce_v1_0_load_fw(struct amdgpu_device *adev, uint32_t *cpu_addr)
+{
+	DRM_INFO("In %s", __func__);
+	struct vce_v1_0_fw_signature *sign;
+	uint32_t chip_id;
+	int i, j, r;
+
+	const struct common_firmware_header *hdr;
+	unsigned int ucode_offset;
+	hdr = (const struct common_firmware_header *)adev->vce.fw->data;
+	ucode_offset = le32_to_cpu(hdr->ucode_array_offset_bytes);
+
+	sign = (void*)adev->vce.fw->data + ucode_offset;
+
+	switch (adev->asic_type) {
+	case CHIP_TAHITI:
+		chip_id = 0x01000014;
+		break;
+	case CHIP_VERDE:
+		chip_id = 0x01000015;
+		break;
+	case CHIP_PITCAIRN:
+		chip_id = 0x01000016;
+		break;
+	default:
+		DRM_ERROR("asic_type %#010x was not found!", adev->asic_type);
+		DRM_INFO("Out %s", __func__);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < le32_to_cpu(sign->number); ++i) {
+		if (le32_to_cpu(sign->val[i].chip_id) == chip_id) {
+			DRM_INFO("chip_id %#010x match", chip_id);
+			break;
+		}
+		else {
+			DRM_DEBUG("chip_id %#010x no match", le32_to_cpu(sign->val[i].chip_id));
+		}
+	}
+
+	if (i == le32_to_cpu(sign->number)) {
+		DRM_ERROR("Loop over sign->number (%d)", le32_to_cpu(sign->number));
+		DRM_INFO("Out %s", __func__);
+		return -EINVAL;
+	}
+
+	DRM_INFO("cpu_addr pointing at %#010llx", cpu_addr);
+	cpu_addr += (256 - 64) / 4;
+	cpu_addr[0] = sign->val[i].nonce[0];
+	cpu_addr[1] = sign->val[i].nonce[1];
+	cpu_addr[2] = sign->val[i].nonce[2];
+	cpu_addr[3] = sign->val[i].nonce[3];
+	cpu_addr[4] = cpu_to_le32(le32_to_cpu(sign->length) + 64);
+
+	memset(&cpu_addr[5], 0, 44);
+	DRM_INFO("Size of hdr->ucode_size_bytes - sizeof(*sign): %d", hdr->ucode_size_bytes - sizeof(*sign));
+	memcpy(&cpu_addr[16], &sign[1], hdr->ucode_size_bytes - sizeof(*sign));
+
+	cpu_addr += (le32_to_cpu(sign->length) + 64) / 4;
+	cpu_addr[0] = sign->val[i].sigval[0];
+	cpu_addr[1] = sign->val[i].sigval[1];
+	cpu_addr[2] = sign->val[i].sigval[2];
+	cpu_addr[3] = sign->val[i].sigval[3];
+
+	if (!adev->vce.keyselect) {
+		r = vce_v1_0_find_keyselect(adev);
+		if (r) {
+			DRM_ERROR("Couldn't find the keyselec value (%d)!", r);
+		}
+		else {
+			DRM_INFO("%s - VCE keyselect: %d", __func__, adev->vce.keyselect);
+		}
+	}
+
+	DRM_INFO("Out %s", __func__);
+	return r;
+}
+
+/**
+ * vce_v1_0_fw_validate - FW validation operation
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Initiate and check VCE validation.
+ */
+static int vce_v1_0_fw_validate(struct amdgpu_device *adev)
+{
+	DRM_INFO("In %s", __func__);
+	int i;
+	uint32_t keyselect = adev->vce.keyselect;
+	uint32_t max_tries = 20;
+	uint32_t delay = 100;
+
+	DRM_INFO("VCE keyselect: %d", keyselect);
+	WREG32(mmVCE_LMI_FW_START_KEYSEL, keyselect);
+
+	for (i = 0; i < max_tries; ++i) {
+		mdelay(delay);
+		if (RREG32(mmVCE_FW_REG_STATUS) & VCE_FW_REG_STATUS__DONE_MASK) {
+			DRM_INFO("mmVCE_FW_REG_STATUS DONE under %d ms", i*delay);
+			break;
+		}
+	}
+
+	if (i == max_tries) {
+		DRM_ERROR("mmVCE_FW_REG_STATUS hasn't done yet: %#010x. Time out after %d ms", RREG32(mmVCE_FW_REG_STATUS), i*delay);
+		DRM_INFO("Out %s", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (!(RREG32(mmVCE_FW_REG_STATUS) & VCE_FW_REG_STATUS__PASS_MASK)) {
+		DRM_ERROR("mmVCE_FW_REG_STATUS didn't pass: %#010x", RREG32(mmVCE_FW_REG_STATUS));
+		DRM_INFO("Out %s", __func__);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < max_tries; ++i) {
+		mdelay(delay);
+		if (!(RREG32(mmVCE_FW_REG_STATUS) & VCE_FW_REG_STATUS__BUSY_MASK)) {
+			DRM_INFO("mmVCE_FW_REG_STATUS not busy anymore under %d ms", i*delay);
+			break;
+		}
+	}
+
+	if (i == max_tries) {
+		DRM_ERROR("mmVCE_FW_REG_STATUS still busy: %#010x. Time out after %d ms", RREG32(mmVCE_FW_REG_STATUS), i*delay);
+		DRM_INFO("Out %s", __func__);
+		return -ETIMEDOUT;
+	}
+
+	DRM_INFO("Out %s", __func__);
+	return 0;
+}
+
+/**
+ * vce_v1_0_mc_resume - memory controller programming
+ *
+ * @adev: amdgpu_device pointer
+ *
+ * Let the VCE memory controller know its offsets
+ */
+static int  vce_v1_0_mc_resume(struct amdgpu_device *adev)
+{
+	DRM_INFO("In %s", __func__);
+	uint64_t addr = adev->vce.gpu_addr;
+	// uint64_t addr = 0;
+	uint32_t offset;
+	// uint32_t offset = adev->vce.gpu_addr;
+	// uint64_t offset;
+	uint32_t size;
+	int r = 0;
 
 	WREG32_P(mmVCE_CLOCK_GATING_A, 0, ~(1 << 16));
 	WREG32_P(mmVCE_UENC_CLOCK_GATING, 0x1FF000, ~0xFF9FF000);
 	WREG32_P(mmVCE_UENC_REG_CLOCK_GATING, 0x3F, ~0x3F);
 	WREG32(mmVCE_CLOCK_GATING_B, 0);
 
-//	WREG32_P(VCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
+	WREG32_P(mmVCE_LMI_FW_PERIODIC_CTRL, 0x4, ~0x4);
 
+	/* initialize VCE memory controller */
 	WREG32(mmVCE_LMI_CTRL, 0x00398000);
+
 	WREG32_P(mmVCE_LMI_CACHE_CTRL, 0x0, ~0x1);
 	WREG32(mmVCE_LMI_SWAP_CNTL, 0);
 	WREG32(mmVCE_LMI_SWAP_CNTL1, 0);
 	WREG32(mmVCE_LMI_VM_CTRL, 0);
 
-//	WREG32(mmVCE_VCPU_SCRATCH7, AMDGPU_MAX_VCE_HANDLES);
-	WREG32(mmVCE_LMI_VCPU_CACHE_40BIT_BAR, (adev->vce.gpu_addr >> 8));	//
+	WREG32(mmVCE_VCPU_SCRATCH7, AMDGPU_MAX_VCE_HANDLES);
 
-	offset = AMDGPU_VCE_FIRMWARE_OFFSET;
+	// According to old exchange with Marek and Alex Deucher,
+	// the VCPU cache 40bit BAR has to be dealt with in AMDGPU
+	// Under Radeon, the VCE_LMI_VCPU_CACHE_40BIT_BAR wasn't set,
+	// defaulting to 0 (disregarding the gpu address).
+	// To compensate, adding the gpu address to the FIRMWARE offset
+	// would indeed point to the good address. However, this would work
+	// only for adresses in the first 32bit of the gpu address space, since 
+	// CACHE_OFFSETs are 32bit limited.
+	// VCE_LMI_VCPU_CACHE_40BIT_BAR + CACHE_OFFSETs = the desired address
+	// Since the gpu address space is not forced to 0 under AMDGPU, we have to handle 
+	// VCE_LMI_VCPU_CACHE_40BIT_BAR properly first and then add the proper CACHE_OFFSETs.
+	// So, we have to set it first to gpu_addr.
+	DRM_INFO("gpu_addr is %#018llx", adev->vce.gpu_addr);
+	/* 40BIT_BAR consumes 256bit pages */
+	// DRM_INFO("mmVCE_LMI_VCPU_CACHE_40BIT_BAR set to %#018llx (%#018llx >> %d)", addr >> 8, addr, 8);
+	// WREG32(mmVCE_LMI_VCPU_CACHE_40BIT_BAR, (addr >> 8));
+	// WREG32(mmVCE_LMI_VCPU_CACHE_40BIT_BAR, (adev->vce.gpu_addr  >> 8));
+
+	offset = addr + AMDGPU_VCE_FIRMWARE_OFFSET;	// The long way.
+	// offset += AMDGPU_VCE_FIRMWARE_OFFSET;	// The old fashion way. This is the way it was done under RADEON
+	// offset = AMDGPU_VCE_FIRMWARE_OFFSET;	// IF 40BIT_BAR was working properly
 	size = VCE_V1_0_FW_SIZE;
+	DRM_INFO("VCE_VCPU_CACHE_OFFSET0: offset (%#018x), masked 0x7fffffff (%#018x) and VCE_VCPU_CACHE_SIZE0: size (%d)", offset, offset & 0x7fffffff, size);
 	WREG32(mmVCE_VCPU_CACHE_OFFSET0, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE0, size);
 
 	offset += size;
 	size = VCE_V1_0_STACK_SIZE;
+	DRM_INFO("VCE_VCPU_CACHE_OFFSET1: offset (%#018x), masked 0x7fffffff (%#018x) and VCE_VCPU_CACHE_SIZE1: size (%d)", offset, offset & 0x7fffffff, size);
 	WREG32(mmVCE_VCPU_CACHE_OFFSET1, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE1, size);
 
 	offset += size;
 	size = VCE_V1_0_DATA_SIZE;
+	DRM_INFO("VCE_VCPU_CACHE_OFFSET2: offset (%#018x), masked 0x7fffffff (%#018x) and VCE_VCPU_CACHE_SIZE2: size (%d)", offset, offset & 0x7fffffff, size);
 	WREG32(mmVCE_VCPU_CACHE_OFFSET2, offset & 0x7fffffff);
 	WREG32(mmVCE_VCPU_CACHE_SIZE2, size);
 
 	WREG32_P(mmVCE_LMI_CTRL2, 0x0, ~0x100);
-	WREG32_FIELD(VCE_SYS_INT_EN, VCE_SYS_INT_TRAP_INTERRUPT_EN, 1);
 
-/*
-	WREG32(VCE_LMI_FW_START_KEYSEL, rdev->vce.keyselect);
+	// Taken from VCE2
+	// WREG32_FIELD(VCE_SYS_INT_EN, VCE_SYS_INT_TRAP_INTERRUPT_EN, 1);
 
-	for (i = 0; i < 10; ++i) {
-		mdelay(10);
-		if (RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_DONE)
-			break;
+	// TODO: if possible, validate fw only at hw_init
+	r = vce_v1_0_fw_validate(adev);
+	if (r) {
+		DRM_ERROR("VCE Firmware can't be validated!");
 	}
 
-	if (i == 10)
-		return -ETIMEDOUT;
+	// TODO: if possible, separate init_cg from mc_resume
+	vce_v1_0_init_cg(adev); // covered in mc_resume, as under RADEON
 
-	if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_PASS))
-		return -EINVAL;
-
-	for (i = 0; i < 10; ++i) {
-		mdelay(10);
-		if (!(RREG32(VCE_FW_REG_STATUS) & VCE_FW_REG_STATUS_BUSY))
-			break;
-	}
-
-	if (i == 10)
-		return -ETIMEDOUT;
-
-	vce_v1_0_init_cg(rdev);
-
-	return 0;
-*/
 	DRM_INFO("Out %s", __func__);
+	return r;
+	// return;
 }
 
 
@@ -372,46 +549,74 @@ static int vce_v1_0_start(struct amdgpu_device *adev)
 	struct amdgpu_ring *ring;
 	int r;
 
+	// Before or after vce_v1_0_mc_resume didn't make any difference...
+	// And removing this and replacing it only by vce_v1_0_init_cg
+	// after vce_v1_0_mc_resume didn't help either...
+	// vce_v1_0_init_cg(adev); // covered in mc_resume, as under RADEON
+	// vce_v1_0_disable_cg(adev); // doesn't exist under RADEON
+
+	// vce_v1_0_mc_resume(adev);
+
+	// r = vce_v1_0_fw_validate(adev);
+	// if (r) {
+	// 	DRM_ERROR("VCE Firmware can't be validated!");
+	// 	DRM_INFO("Out %s", __func__);
+	// 	return r;
+	// }
+
+	// vce_v1_0_init_cg(adev);
+
 	/* set BUSY flag */
 	WREG32_P(mmVCE_STATUS, 1, ~1);
-
-	vce_v1_0_init_cg(adev);
-	vce_v1_0_disable_cg(adev);
-
-	vce_v1_0_mc_resume(adev);
+	// WREG32_FIELD(VCE_STATUS, JOB_BUSY, 1);
 
 	ring = &adev->vce.ring[0];
+	DRM_INFO("mmVCE_RB_RPTR %#010x", lower_32_bits(ring->wptr));
+	DRM_INFO("mmVCE_RB_WPTR %#010x", lower_32_bits(ring->wptr));
+	DRM_INFO("Complete gpu_addr %#018llx", ring->gpu_addr);
+	DRM_INFO("mmVCE_RB_BASE_LO %#010x", lower_32_bits(ring->gpu_addr));
+	DRM_INFO("mmVCE_RB_BASE_HI %#010x", upper_32_bits(ring->gpu_addr));
+	DRM_INFO("mmVCE_RB_SIZE %d", ring->ring_size / 4);
 	WREG32(mmVCE_RB_RPTR, lower_32_bits(ring->wptr));
 	WREG32(mmVCE_RB_WPTR, lower_32_bits(ring->wptr));
-	WREG32(mmVCE_RB_BASE_LO, ring->gpu_addr);
+	WREG32(mmVCE_RB_BASE_LO, lower_32_bits(ring->gpu_addr));
 	WREG32(mmVCE_RB_BASE_HI, upper_32_bits(ring->gpu_addr));
 	WREG32(mmVCE_RB_SIZE, ring->ring_size / 4);
 
 	ring = &adev->vce.ring[1];
 	WREG32(mmVCE_RB_RPTR2, lower_32_bits(ring->wptr));
 	WREG32(mmVCE_RB_WPTR2, lower_32_bits(ring->wptr));
-	WREG32(mmVCE_RB_BASE_LO2, ring->gpu_addr);
+	WREG32(mmVCE_RB_BASE_LO2, lower_32_bits(ring->gpu_addr));
 	WREG32(mmVCE_RB_BASE_HI2, upper_32_bits(ring->gpu_addr));
 	WREG32(mmVCE_RB_SIZE2, ring->ring_size / 4);
 
-	WREG32_FIELD(VCE_VCPU_CNTL, CLK_EN, 1);
-	WREG32_FIELD(VCE_SOFT_RESET, ECPU_SOFT_RESET, 1);
+	WREG32_P(mmVCE_VCPU_CNTL, VCE_VCPU_CNTL__CLK_EN_MASK, ~VCE_VCPU_CNTL__CLK_EN_MASK);
+
+	WREG32_P(mmVCE_SOFT_RESET,
+		 VCE_SOFT_RESET__ECPU_SOFT_RESET_MASK |
+		 VCE_FME_SOFT_RESET, ~(
+		 VCE_SOFT_RESET__ECPU_SOFT_RESET_MASK |
+		 VCE_FME_SOFT_RESET));
+
 	mdelay(100);
-	WREG32_FIELD(VCE_SOFT_RESET, ECPU_SOFT_RESET, 0);
+
+	WREG32_P(mmVCE_SOFT_RESET, 0, ~(
+		 VCE_SOFT_RESET__ECPU_SOFT_RESET_MASK |
+		 VCE_FME_SOFT_RESET));
 
 	r = vce_v1_0_firmware_loaded(adev);
-
-	/* clear BUSY flag */
-	WREG32_P(mmVCE_STATUS, 0, ~1);
-
 	if (r) {
 		DRM_ERROR("VCE not responding, giving up!!!\n");
 		DRM_INFO("Out %s", __func__);
 		return r;
 	}
 
+	/* clear BUSY flag */
+	WREG32_P(mmVCE_STATUS, 0, ~1);
+	// WREG32_FIELD(VCE_STATUS, JOB_BUSY, 0);
+
 	DRM_INFO("Out %s", __func__);
-	return 0;
+	return r;
 }
 
 static int vce_v1_0_stop(struct amdgpu_device *adev)
@@ -461,110 +666,11 @@ static int vce_v1_0_stop(struct amdgpu_device *adev)
 	return 0;
 }
 
-static void vce_v1_0_set_sw_cg(struct amdgpu_device *adev, bool gated)
+// from Radeon VCE1
+void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable)
 {
+	DRM_INFO("In %s", __func__);
 	u32 tmp;
-	DRM_INFO("In %s", __func__);
-
-	if (gated) {
-		tmp = RREG32(mmVCE_CLOCK_GATING_B);
-		tmp |= 0xe70000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
-
-		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
-		tmp |= 0xff000000;
-		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
-
-		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
-		tmp &= ~0x3fc;
-		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
-
-		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
-	} else {
-		tmp = RREG32(mmVCE_CLOCK_GATING_B);
-		tmp |= 0xe7;
-		tmp &= ~0xe70000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
-
-		tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
-		tmp |= 0x1fe000;
-		tmp &= ~0xff000000;
-		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
-
-		tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
-		tmp |= 0x3fc;
-		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
-	}
-	DRM_INFO("Out %s", __func__);
-}
-
-static void vce_v1_0_set_dyn_cg(struct amdgpu_device *adev, bool gated)
-{
-	u32 orig, tmp;
-	DRM_INFO("In %s", __func__);
-
-/* LMI_MC/LMI_UMC always set in dynamic,
- * set {CGC_*_GATE_MODE, CGC_*_SW_GATE} = {0, 0}
- */
-	tmp = RREG32(mmVCE_CLOCK_GATING_B);
-	tmp &= ~0x00060006;
-
-/* Exception for ECPU, IH, SEM, SYS blocks needs to be turned on/off by SW */
-	if (gated) {
-		tmp |= 0xe10000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
-	} else {
-		tmp |= 0xe1;
-		tmp &= ~0xe10000;
-		WREG32(mmVCE_CLOCK_GATING_B, tmp);
-	}
-
-	orig = tmp = RREG32(mmVCE_UENC_CLOCK_GATING);
-	tmp &= ~0x1fe000;
-	tmp &= ~0xff000000;
-	if (tmp != orig)
-		WREG32(mmVCE_UENC_CLOCK_GATING, tmp);
-
-	orig = tmp = RREG32(mmVCE_UENC_REG_CLOCK_GATING);
-	tmp &= ~0x3fc;
-	if (tmp != orig)
-		WREG32(mmVCE_UENC_REG_CLOCK_GATING, tmp);
-
-	/* set VCE_UENC_REG_CLOCK_GATING always in dynamic mode */
-	WREG32(mmVCE_UENC_REG_CLOCK_GATING, 0x00);
-
-	if(gated)
-		WREG32(mmVCE_CGTT_CLK_OVERRIDE, 0);
-
-	DRM_INFO("Out %s", __func__);
-}
-/*
-// from AMDGPU vce 2.0
-static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
-								bool sw_cg)
-{
-	if (enable && (adev->cg_flags & AMD_CG_SUPPORT_VCE_MGCG)) {
-		if (sw_cg)
-			vce_v1_0_set_sw_cg(adev, true);
-		else
-			vce_v1_0_set_dyn_cg(adev, true);
-	} else {
-		vce_v1_0_disable_cg(adev);
-
-		if (sw_cg)
-			vce_v1_0_set_sw_cg(adev, false);
-		else
-			vce_v1_0_set_dyn_cg(adev, false);
-	}
-}
-*/
-
-// from Radeon vce 1.0
-static void vce_v1_0_enable_mgcg(struct amdgpu_device *adev, bool enable,
- 								bool sw_cg)
-{
-	u32 tmp;
-	DRM_INFO("In %s", __func__);
 
 	if (enable && (adev->cg_flags & AMD_CG_SUPPORT_VCE_MGCG)) {
 		tmp = RREG32(mmVCE_CLOCK_GATING_A);
@@ -680,19 +786,64 @@ static int vce_v1_0_sw_fini(struct amdgpu_ip_block *ip_block)
 	return amdgpu_vce_sw_fini(adev);
 }
 
+/**
+ * vce_v1_0_hw_init - start and test VCE block
+ *
+ * @ip_block: Pointer to the amdgpu_ip_block for this hw instance.
+ *
+ * Initialize the hardware, boot up the VCPU and do some testing
+ */
 static int vce_v1_0_hw_init(struct amdgpu_ip_block *ip_block)
 {
+	DRM_INFO("In %s, same as RADEON vce_v1_0_init()", __func__);
+	struct amdgpu_ring *ring;
 	int r, i;
 	struct amdgpu_device *adev = ip_block->adev;
-	DRM_INFO("In %s", __func__);
 
-	amdgpu_asic_set_vce_clocks(adev, 10000, 10000);
-	vce_v1_0_enable_mgcg(adev, true, false);
+	/* In VCE 2.0 */
+	// vce_v1_0_init_cg(adev);
+	// vce_v1_0_disable_cg(adev);
+
+	// ***
+	/* Power up VCE */
+	vce_v1_0_enable_mgcg(adev, true);
+	if (adev->pm.dpm_enabled)
+               amdgpu_dpm_enable_vce(adev, true);
+       else {
+		amdgpu_asic_set_vce_clocks(adev, 53300, 40000); // taken from radeon_vce_note_usage
+	        // amdgpu_asic_set_vce_clocks(adev, 10000, 10000);	// Used by other VCE implementation
+       }
+
+	r = vce_v1_0_mc_resume(adev);
+	if (r) {
+		dev_err(adev->dev, "failed VCE mc resume (%d).\n", r);
+	}
+
+       /* vce_v1_0_mc_resume() must be called prior to calling vce_v1_0_fw_validate()*/
+       /* fw_validate() and init_cg() could be independant from mc_resume(), to be tested*/
+	// r = vce_v1_0_fw_validate(adev);
+	// if (r) {
+	// 	DRM_ERROR("VCE Firmware can't be validated!");
+	// }
+
+	// vce_v1_0_init_cg(adev);
+	// ***
+
+	/* Based on RADEON and on AMDGPU UVD 3.1 */
+	r = vce_v1_0_start(adev);
+	if (r) {
+		DRM_ERROR("vce_v1_0_start() failed");
+		DRM_INFO("Out %s", __func__);
+		return r;
+	}
 
 	for (i = 0; i < adev->vce.num_rings; i++) {
-		r = amdgpu_ring_test_helper(&adev->vce.ring[i]);
+		ring = &adev->vce.ring[i];
+		// ring->sched.ready = true;
+		r = amdgpu_ring_test_helper(ring);
 		if (r) {
-			DRM_ERROR("VCE initialization failed.\n");
+			// ring->sched.ready = false;
+			DRM_ERROR("amdgpu_ring_test_ring() failed with ring[%d].\n", i);
 			DRM_INFO("Out %s", __func__);
 			return r;
 		}
@@ -825,17 +976,17 @@ static int vce_v1_0_set_clockgating_state(void *handle,
 					  enum amd_clockgating_state state)
 {
 	bool gate = false;
-	bool sw_cg = false;
+	// bool sw_cg = false;
 
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
 	DRM_INFO("In %s", __func__);
 
 	if (state == AMD_CG_STATE_GATE) {
 		gate = true;
-		sw_cg = true;
+		// sw_cg = true;
 	}
 
-	vce_v1_0_enable_mgcg(adev, gate, sw_cg);
+	vce_v1_0_enable_mgcg(adev, gate);
 
 	DRM_INFO("Out %s", __func__);
 	return 0;

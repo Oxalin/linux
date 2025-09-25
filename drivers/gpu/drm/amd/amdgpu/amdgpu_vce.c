@@ -97,6 +97,72 @@ static int amdgpu_vce_get_create_msg(struct amdgpu_ring *ring, uint32_t handle,
 static int amdgpu_vce_get_destroy_msg(struct amdgpu_ring *ring, uint32_t handle,
 				      bool direct, struct dma_fence **fence);
 
+/*
+* amdgpu_vce_find_legacy_ucode_version - look in the ucode for the version
+*
+* @adev: amdgpu_device pointer
+*
+* When the CFH doesn't contain a valid ucode_version, go deeper
+*/
+int amdgpu_vce_find_legacy_ucode_version(struct amdgpu_device *adev) {
+	static const char *fw_version = "[ATI LIB=VCEFW,";
+	static const char *fb_version = "[ATI LIB=VCEFWSTATS,";
+	unsigned long size;
+	const char *c;
+	uint8_t version_major, version_minor, binary_id;
+
+	size = adev->vce.fw->size - strlen(fw_version) - 9;
+	c = adev->vce.fw->data;
+	for (; size > 0; --size, ++c)
+		if (strncmp(c, fw_version, strlen(fw_version)) == 0)
+			break;
+
+	if (size == 0) {
+		DRM_INFO("fw_version was not found.");
+		return -EINVAL;
+	}
+
+	c += strlen(fw_version);
+	if (sscanf(c, "%2hhu.%2hhu.%2hhu]", &version_major, &version_minor, &binary_id) != 3) {
+		DRM_INFO("fw_version format did not match.");
+		return -EINVAL;
+	}
+
+	/* search for feedback version */
+	size = adev->vce.fw->size - strlen(fb_version) - 3;
+	c = adev->vce.fw->data;
+	for (; size > 0; --size, ++c)
+		if (strncmp(c, fb_version, strlen(fb_version)) == 0)
+			break;
+
+	if (size == 0) {
+		DRM_INFO("fb_version was not found.");
+		return -EINVAL;
+	}
+
+	c += strlen(fb_version);
+	if (sscanf(c, "%2u]", &adev->vce.fb_version) != 1) {
+		DRM_INFO("fb_version did not match.");
+		return -EINVAL;
+	}
+
+	DRM_INFO("Found VCE firmware/feedback version %d.%d.%d / %d\n",
+		version_major, version_minor, binary_id, adev->vce.fb_version);
+
+	adev->vce.fw_version = ((version_major << 24) | (version_minor << 16) |
+	(binary_id << 8));
+
+	/* we can only work with these fw versions for now */
+	if ((adev->vce.fw_version != ((40 << 24) | (2 << 16) | (2 << 8))) &&
+	    (adev->vce.fw_version != ((50 << 24) | (0 << 16) | (1 << 8))) &&
+	    (adev->vce.fw_version != ((50 << 24) | (1 << 16) | (2 << 8)))) {
+		DRM_INFO("Out %s: -EINVAL, unsupported VCE firmware version!", __func__);
+		return -EINVAL;
+	}
+	
+	return 0;
+}
+
 /**
  * amdgpu_vce_sw_init - allocate memory, load vce firmware
  *
@@ -199,10 +265,30 @@ int amdgpu_vce_sw_init(struct amdgpu_device *adev, unsigned long size)
 	version_major = (ucode_version >> 20) & 0xfff;
 	version_minor = (ucode_version >> 8) & 0xfff;
 	binary_id = ucode_version & 0xff;
-	DRM_INFO("Found VCE firmware Version: %d.%d Binary ID: %d\n",
-		version_major, version_minor, binary_id);
-	adev->vce.fw_version = ((version_major << 24) | (version_minor << 16) |
-				(binary_id << 8));
+
+	// If version major and minor are zero, we are probably dealing with a manually 
+	// created firmware where the CFH couldn't know of the actual version.
+	// Search for firmware version in the ucode instead of the common firmware header
+	if (!(version_major || version_minor)) {
+		DRM_INFO("No version in the CFH (manually created file?). Searching in the actual ucode.");
+
+		r = amdgpu_vce_find_legacy_ucode_version(adev);
+		if (r) {
+			dev_err(adev->dev, "(error %d) could not find firmware version\n", r);
+			return r;
+		}
+	}
+	else {
+		DRM_INFO("Found VCE firmware Version: %d.%d Binary ID: %d\n",
+			version_major, version_minor, binary_id);
+			adev->vce.fw_version = ((version_major << 24) | (version_minor << 16) |
+			(binary_id << 8));
+	}
+
+	if (adev->vce.fw != NULL) {
+		DRM_INFO("the firmware vce.fw->size is (%d)", adev->vce.fw->size);
+	}
+	DRM_INFO("the requested 'size' we are about to use is (%d)", size);
 
 	r = amdgpu_bo_create_kernel(adev, size, PAGE_SIZE,
 				    AMDGPU_GEM_DOMAIN_VRAM |
@@ -339,12 +425,19 @@ int amdgpu_vce_resume(struct amdgpu_device *adev)
 		return r;
 	}
 
-	hdr = (const struct common_firmware_header *)adev->vce.fw->data;
-	offset = le32_to_cpu(hdr->ucode_array_offset_bytes);
-
 	if (drm_dev_enter(adev_to_drm(adev), &idx)) {
-		memcpy_toio(cpu_addr, adev->vce.fw->data + offset,
-			    adev->vce.fw->size - offset);
+		hdr = (const struct common_firmware_header *)adev->vce.fw->data;
+		offset = le32_to_cpu(hdr->ucode_array_offset_bytes);
+
+		if (adev->asic_type < CHIP_BONAIRE) {
+			// TODO: check how / why RADEON's vce_v1_0_load_fw was used if < BONAIRE
+			DRM_INFO("VCE v1.0 : using specific firmware loading mechanism.");
+			memset(cpu_addr, 0, amdgpu_bo_size(adev->vce.vcpu_bo));
+			r = vce_v1_0_load_fw(adev, cpu_addr);
+		} else {
+			memcpy_toio(cpu_addr, adev->vce.fw->data + offset,
+				le32_to_cpu(hdr->ucode_size_bytes));
+		}
 		drm_dev_exit(idx);
 	}
 

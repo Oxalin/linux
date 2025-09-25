@@ -32,6 +32,8 @@
 
 #define AMDGPU_VCE_FW_53_45	((53 << 24) | (45 << 16))
 
+int vce_v1_0_load_fw(struct amdgpu_device *adev, uint32_t *data);
+
 struct amdgpu_vce {
 	struct amdgpu_bo	*vcpu_bo;
 	uint64_t		gpu_addr;
@@ -45,6 +47,10 @@ struct amdgpu_vce {
 	struct delayed_work	idle_work;
 	struct mutex		idle_mutex;
 	const struct firmware	*fw;	/* VCE firmware */
+
+	/* For VCE1 */
+	uint32_t                keyselect;
+
 	struct amdgpu_ring	ring[AMDGPU_MAX_VCE_RINGS];
 	struct amdgpu_irq_src	irq;
 	unsigned		harvest_config;
